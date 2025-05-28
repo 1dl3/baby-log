@@ -2,6 +2,7 @@
 	import { page } from '$app/stores';
 	import UserInfo from './UserInfo.svelte';
 	import { clearUser, user, setUser } from '$lib/stores/user';
+	import { onMount } from 'svelte';
 
 	export let userData: {
 		id?: string;
@@ -11,8 +12,19 @@
 	} | null = null;
 
 	// Initialize the user store with the user prop
+	onMount(() => {
+		console.log('Layout component mounted, userData:', userData);
+		if (userData) {
+			setUser(userData);
+			console.log('User store after setUser in onMount:', $user);
+		}
+	});
+
+	// Also keep the reactive statement as a backup
 	$: if (userData) {
+		console.log('Layout reactive statement triggered, userData:', userData);
 		setUser(userData);
+		console.log('User store after setUser in reactive statement:', $user);
 	}
 
 	let isMenuOpen = false;
