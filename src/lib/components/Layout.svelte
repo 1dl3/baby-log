@@ -13,18 +13,14 @@
 
 	// Initialize the user store with the user prop
 	onMount(() => {
-		console.log('Layout component mounted, userData:', userData);
 		if (userData) {
 			setUser(userData);
-			console.log('User store after setUser in onMount:', $user);
 		}
 	});
 
 	// Also keep the reactive statement as a backup
 	$: if (userData) {
-		console.log('Layout reactive statement triggered, userData:', userData);
 		setUser(userData);
-		console.log('User store after setUser in reactive statement:', $user);
 	}
 
 	let isMenuOpen = false;

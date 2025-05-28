@@ -282,7 +282,13 @@
 					<a href="/baby/{baby.id}/details">
 						<div class="px-4 py-5 sm:px-6 flex items-center">
 							<div class={`flex-shrink-0 rounded-full p-2 ${genderIcons[baby.gender]?.color || 'bg-gray-100'}`}>
-								<span class="text-2xl">{genderIcons[baby.gender]?.icon || '👶'}</span>
+								{#if baby?.photoUrl}
+									<div class="relative w-24 h-24 rounded-full overflow-hidden bg-gray-100">
+										<img src={baby.photoUrl} alt={baby.name} class="w-full h-full object-cover" />
+									</div>
+								{:else}
+									<span class="text-2xl">{genderIcons[baby.gender]?.icon || '👶'}</span>
+								{/if}
 							</div>
 							<div class="ml-4">
 								<h3 class="text-lg font-medium leading-6 text-gray-900">{baby.name}                </h3>
