@@ -1,10 +1,24 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
+	import { page } from '$app/stores';
+
 	let token = '';
 	let message = '';
 	let error = '';
 	let verifying = false;
 
-	async function handleVerify(event: Event) {
+	onMount(() => {
+		// Extract token from URL if present
+		const urlToken = page.url.searchParams.get('token');
+		if (urlToken) {
+			token = urlToken;
+			// Automatically verify if token is present in URL
+			handleVerify();
+		}
+	});
+
+	async function handleVerify(event?: Event) {
+		if (event) event.preventDefault();
 		event.preventDefault();
 		verifying = true;
 		error = '';

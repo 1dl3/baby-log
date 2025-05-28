@@ -59,8 +59,14 @@ npm install
 
 3. Set up the database:
 ```bash
+# Run the custom migration for the qr_code table
+npm run db:fix-qr-code
+
+# Run the regular database migrations
 npm run db:migrate
 ```
+
+   > **Note:** The custom migration is needed to fix an issue with the qr_code table's column types. See the [migrations/README.md](migrations/README.md) file for more details.
 
 4. Start the development server:
 ```bash
@@ -154,6 +160,7 @@ You can preview the production build with `npm run preview`.
 │  drizzle:                                                            │
 │  - You will need to set DATABASE_URL in your production environment  │
 │  - Run yarn run db:start to start the docker container               │
+│  - Run yarn run db:fix-qr-code to apply the custom migration         │
 │  - Run yarn run db:push to update your database schema               │
 │                                                                      │
 ├──────────────────────────────────────────────────────────────────────╯
