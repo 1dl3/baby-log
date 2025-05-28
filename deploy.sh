@@ -28,7 +28,7 @@ yarn build
 # === Sync auf Server (nur relevante Dateien) ===
 info "Syncing build artifacts to server..."
 rsync -az --delete --exclude=".git" --exclude="node_modules" -e "ssh -p $SERVER_PORT" \
-  build static drizzle entrypoint.sh Dockerfile drizzle.config.ts src svelte.config.js package.json yarn.lock \
+  build static  entrypoint.sh Dockerfile drizzle.config.ts src svelte.config.js package.json yarn.lock \
   $SERVER_USER@$SERVER_HOST:$REMOTE_DIR/
 
 # === Remote Compose: down → up --build ===

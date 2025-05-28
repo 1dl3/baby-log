@@ -47,6 +47,7 @@
 		"vite": "^6.3.5"
 	},
 	"dependencies": {
+		"@sveltejs/adapter-node": "^5.2.12",
 		"@types/mjml": "^4.7.4",
 		"@types/nodemailer": "^6.4.17",
 		"bcryptjs": "^3.0.2",

@@ -13,7 +13,7 @@ COPY svelte.config.js .
 COPY entrypoint.sh .
 COPY build ./build
 COPY static ./static
-COPY drizzle ./drizzle
+#COPY drizzle ./drizzle
 COPY src ./src
 
 
