@@ -9,7 +9,7 @@
   interface Baby {
     id: number;
     name: string;
-    birth_date: string;
+    birthDate: string;
     gender: 'male' | 'female' | 'diverse';
   }
 
@@ -272,14 +272,14 @@
             <div class="ml-4">
               <h3 class="text-lg font-medium leading-6 text-gray-900">{baby.name}</h3>
               <p class="text-sm text-gray-500">
-                {formatDate(baby.birth_date)} · {calculateAge(baby.birth_date)}
+                {formatDate(baby.birthDate)} · {calculateAge(baby.birthDate)}
               </p>
             </div>
           </div>
           <div class="px-4 py-4 sm:px-6">
             <div class="grid grid-cols-2 gap-4">
               <a
-                href="/dashboard/{baby.id}"
+                href="/baby/{baby.id}/details"
                 class="inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
               >
                 <svg class="-ml-1 mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">

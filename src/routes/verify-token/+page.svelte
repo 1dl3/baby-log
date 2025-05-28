@@ -19,7 +19,6 @@
 
 	async function handleVerify(event?: Event) {
 		if (event) event.preventDefault();
-		event.preventDefault();
 		verifying = true;
 		error = '';
 		message = '';

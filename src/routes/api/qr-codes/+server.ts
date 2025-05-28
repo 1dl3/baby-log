@@ -7,7 +7,7 @@ import QRCode from 'qrcode';
 
 // Generate a new QR code
 export const POST: RequestHandler = async ({ request, locals }) => {
-  if (!locals.user) {
+	if (!locals.user) {
     return json({ error: 'Unauthorized' }, { status: 401 });
   }
 

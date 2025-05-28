@@ -3,17 +3,15 @@ import type { RequestHandler } from './$types';
 import { db } from '$lib/server/db';
 import { baby, diaperChange, feeding, nursing } from '$lib/server/db/schema';
 import { eq } from 'drizzle-orm';
-import { getSession } from '$lib/server/session';
 
 // Get all babies for a user
-export const GET: RequestHandler = async (event) => {
-	const userId = await getSession(event);
-	if (!userId) {
+export const GET: RequestHandler = async ({ locals }) => {
+	if (!locals.user) {
 		return json({ error: 'Unauthorized' }, { status: 401 });
 	}
 	try {
 		const babies = await db.query.baby.findMany({
-			where: eq(baby.userId, userId)
+			where: eq(baby.userId, locals.user.id)
 		});
 		return json(babies);
 	} catch (error) {
@@ -23,17 +21,16 @@ export const GET: RequestHandler = async (event) => {
 };
 
 // Create a new baby
-export const POST: RequestHandler = async (event) => {
-	const userId = await getSession(event);
-	if (!userId) {
+export const POST: RequestHandler = async ({ request, locals }) => {
+	if (!locals.user) {
 		return json({ error: 'Unauthorized' }, { status: 401 });
 	}
 
-	const { name, birthDate, gender } = await event.request.json();
+	const { name, birthDate, gender } = await request.json();
 
 	try {
 		const [newBaby] = await db.insert(baby).values({
-			userId,
+			userId: locals.user.id,
 			name,
 			birthDate: new Date(birthDate),
 			gender
@@ -47,13 +44,12 @@ export const POST: RequestHandler = async (event) => {
 };
 
 // Get logs for a baby
-export const PUT: RequestHandler = async (event) => {
-	const userId = await getSession(event);
-	if (!userId) {
+export const PUT: RequestHandler = async ({ request, locals }) => {
+	if (!locals.user) {
 		return json({ error: 'Unauthorized' }, { status: 401 });
 	}
 
-	const { babyId, type } = await event.request.json();
+	const { babyId, type } = await request.json();
 
 	try {
 		let logs;
@@ -82,4 +78,4 @@ export const PUT: RequestHandler = async (event) => {
 		console.error('Error fetching logs:', error);
 		return json({ error: 'Internal server error' }, { status: 500 });
 	}
-}; 
+};
