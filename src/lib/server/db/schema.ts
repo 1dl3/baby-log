@@ -1,0 +1,102 @@
+import { pgTable, text, timestamp, boolean, uuid, integer } from 'drizzle-orm/pg-core';
+import { relations } from 'drizzle-orm';
+
+export const user = pgTable('user', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  email: text('email').notNull().unique(),
+  password: text('password').notNull(),
+  name: text('name').notNull(),
+  emailVerified: boolean('email_verified').notNull().default(false),
+  verificationToken: text('verification_token'),
+  resetToken: text('reset_token'),
+  resetTokenExpires: timestamp('reset_token_expires')
+});
+
+export const sessions = pgTable('sessions', {
+	id: uuid('id').primaryKey().defaultRandom(),
+	userId: uuid('user_id')
+	  .notNull()
+	  .references(() => user.id, { onDelete: 'cascade' }),
+	token: text('token').notNull(),
+	createdAt: timestamp('created_at').defaultNow().notNull(),
+	expiresAt: timestamp('expires_at').notNull()
+  });
+
+export const baby = pgTable('baby', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: uuid('user_id').notNull().references(() => user.id, { onDelete: 'cascade' }),
+  name: text('name').notNull(),
+  birthDate: timestamp('birth_date').notNull(),
+  gender: text('gender').notNull(),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  shareCode: text('share_code').unique(),
+  shareCodeExpires: timestamp('share_code_expires')
+});
+
+export const sharedBaby = pgTable('shared_baby', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  babyId: uuid('baby_id').notNull().references(() => baby.id, { onDelete: 'cascade' }),
+  userId: uuid('user_id').notNull().references(() => user.id, { onDelete: 'cascade' }),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  canEdit: boolean('can_edit').notNull().default(false)
+});
+
+export const diaperChange = pgTable('diaper_change', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  babyId: uuid('baby_id').notNull().references(() => baby.id, { onDelete: 'cascade' }),
+  userId: uuid('user_id').notNull().references(() => user.id, { onDelete: 'cascade' }),
+  type: text('type').notNull(), // wet, dirty, both
+  notes: text('notes'),
+  timestamp: timestamp('timestamp').notNull().defaultNow()
+});
+
+export const feeding = pgTable('feeding', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  babyId: uuid('baby_id').notNull().references(() => baby.id, { onDelete: 'cascade' }),
+  userId: uuid('user_id').notNull().references(() => user.id, { onDelete: 'cascade' }),
+  type: text('type').notNull(), // bottle, nursing, solid
+  amount: integer('amount'), // in ml for bottle, null for nursing
+  notes: text('notes'),
+  timestamp: timestamp('timestamp').notNull().defaultNow()
+});
+
+export const nursing = pgTable('nursing', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  babyId: uuid('baby_id').notNull().references(() => baby.id, { onDelete: 'cascade' }),
+  userId: uuid('user_id').notNull().references(() => user.id, { onDelete: 'cascade' }),
+  duration: integer('duration').notNull(), // in minutes
+  side: text('side').notNull(), // left, right, both
+  notes: text('notes'),
+  timestamp: timestamp('timestamp').notNull().defaultNow()
+});
+
+// Relations
+export const userRelations = relations(user, ({ many }) => ({
+  babies: many(baby),
+  sharedBabies: many(sharedBaby),
+  diaperChanges: many(diaperChange),
+  feedings: many(feeding),
+  nursingSessions: many(nursing)
+}));
+
+export const babyRelations = relations(baby, ({ one, many }) => ({
+  owner: one(user, {
+    fields: [baby.userId],
+    references: [user.id]
+  }),
+  sharedWith: many(sharedBaby),
+  diaperChanges: many(diaperChange),
+  feedings: many(feeding),
+  nursingSessions: many(nursing)
+}));
+
+export const sharedBabyRelations = relations(sharedBaby, ({ one }) => ({
+  baby: one(baby, {
+    fields: [sharedBaby.babyId],
+    references: [baby.id]
+  }),
+  user: one(user, {
+    fields: [sharedBaby.userId],
+    references: [user.id]
+  })
+})); 

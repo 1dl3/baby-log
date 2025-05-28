@@ -1,0 +1,58 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: always
+    working_dir: /app
+    entrypoint: ["/app/entrypoint.sh"]
+    env_file:
+      - .env
+    environment:
+      - NODE_ENV=${NODE_ENV}
+      - DATABASE_URL=${DATABASE_URL}
+      - SMTP_HOST=${SMTP_HOST}
+      - SMTP_PORT=${SMTP_PORT}
+      - SMTP_USER=${SMTP_USER}
+      - SMTP_PASS=${SMTP_PASS}
+      - SMTP_FROM=${SMTP_FROM}
+    networks:
+      - proxy
+      - default
+    depends_on:
+      - babylogdb
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.babylog.entrypoints=http"
+      - "traefik.http.routers.babylog.rule=Host(`www.babylog.fuisz.eu`) || Host(`babylog.fuisz.eu`)"
+      - "traefik.http.middlewares.babylog-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.babylog.middlewares=babylog-https-redirect"
+      - "traefik.http.routers.babylog-secure.entrypoints=https"
+      - "traefik.http.routers.babylog-secure.rule=Host(`www.babylog.fuisz.eu`) || Host(`babylog.fuisz.eu`)"
+      - "traefik.http.routers.babylog-secure.tls=true"
+      - "traefik.http.routers.babylog-secure.tls.certresolver=http"
+      - "traefik.http.routers.babylog-secure.service=babylog"
+      - "traefik.http.services.babylog.loadbalancer.server.port=3000"
+      - "traefik.docker.network=proxy"
+      - "traefik.http.routers.babylog-secure.middlewares=secHeaders@file"
+
+  babylogdb:
+    image: postgres:latest
+    restart: always
+    env_file:
+      - .env
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - default
+
+volumes:
+  pgdata:
+
+networks:
+  proxy:
+    external: true

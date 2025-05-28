@@ -1,0 +1,14 @@
+services:
+  db:
+    image: postgres
+    restart: always
+    ports:
+      - 5432:5432
+    environment: 
+      POSTGRES_USER: babylog
+      POSTGRES_PASSWORD: t8mOlfcR5K9w0oQ
+      POSTGRES_DB: local
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+volumes:
+  pgdata:
