@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
-	import { page } from '$app/stores';
-	import { fade } from 'svelte/transition';
+ import { onMount } from 'svelte';
+ import { page } from '$app/stores';
+ import { fade, fly } from 'svelte/transition';
 
 	// Define types for our data
 	interface Baby {
@@ -45,8 +45,10 @@
 	let selectedQrType = 'diaper';
 	let generatingQR = false;
 	let showQrModal = false;
+	let photoFile: File | null = null;
+	let photoPreview: string | null = null;
 
-	function openQrModal(baby) {
+	function openQrModal() {
 		showQrModal = true;
 	}
 
@@ -204,16 +206,30 @@
 		error = '';
 
 		try {
+			// Use FormData to send the photo
+			const formData = new FormData();
+			formData.append('name', editedBaby.name);
+			formData.append('birthDate', editedBaby.birthDate);
+			formData.append('gender', editedBaby.gender);
+
+			// Add photo if selected
+			if (photoFile) {
+				formData.append('photo', photoFile);
+			}
+
 			const res = await fetch(`/api/babies/${$page.params.id}`, {
 				method: 'PUT',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify(editedBaby)
+				body: formData
 			});
 
 			if (!res.ok) throw new Error('Failed to update baby');
 
 			baby = await res.json();
 			editMode = false;
+
+			// Reset photo state
+			photoFile = null;
+			photoPreview = null;
 
 			// Show success message
 			successMessage = 'Baby erfolgreich aktualisiert!';
@@ -229,6 +245,20 @@
 		}
 	}
 
+	function handlePhotoChange(event: Event) {
+		const input = event.target as HTMLInputElement;
+		if (input.files && input.files[0]) {
+			photoFile = input.files[0];
+
+			// Create preview
+			const reader = new FileReader();
+			reader.onload = (e) => {
+				photoPreview = e.target?.result as string;
+			};
+			reader.readAsDataURL(photoFile);
+		}
+	}
+
 	function cancelEdit() {
 		if (baby) {
 			editedBaby = {
@@ -237,6 +267,9 @@
 				gender: baby.gender
 			};
 		}
+		// Reset photo state
+		photoFile = null;
+		photoPreview = null;
 		editMode = false;
 	}
 
@@ -480,6 +513,44 @@
 									<option value="diverse">Divers</option>
 								</select>
 							</div>
+							<div>
+								<label for="photo" class="block text-sm font-medium text-gray-700">Foto</label>
+								<div class="mt-1 flex items-center space-x-4">
+									{#if photoPreview}
+										<div class="relative w-24 h-24 rounded-full overflow-hidden bg-gray-100">
+											<img src={photoPreview} alt="Vorschau" class="w-full h-full object-cover" />
+										</div>
+									{:else if baby?.photoUrl}
+										<div class="relative w-24 h-24 rounded-full overflow-hidden bg-gray-100">
+											<img src={baby.photoUrl} alt={baby.name} class="w-full h-full object-cover" />
+										</div>
+									{:else}
+										<div class="w-24 h-24 rounded-full bg-gray-100 flex items-center justify-center">
+											<svg class="h-12 w-12 text-gray-300" fill="currentColor" viewBox="0 0 24 24">
+												<path d="M24 20.993V24H0v-2.996A14.977 14.977 0 0112.004 15c4.904 0 9.26 2.354 11.996 5.993zM16.002 8.999a4 4 0 11-8 0 4 4 0 018 0z" />
+											</svg>
+										</div>
+									{/if}
+									<div>
+										<input
+											id="photo"
+											type="file"
+											accept="image/*"
+											on:change={handlePhotoChange}
+											class="sr-only"
+										/>
+										<label
+											for="photo"
+											class="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 cursor-pointer"
+										>
+											{photoPreview || baby?.photoUrl ? 'Foto ändern' : 'Foto hochladen'}
+										</label>
+										{#if photoFile}
+											<p class="mt-1 text-xs text-gray-500">{photoFile.name}</p>
+										{/if}
+									</div>
+								</div>
+							</div>
 							<div class="flex justify-end space-x-3 pt-4">
 								<button
 									type="button"
@@ -531,6 +602,27 @@
                     {genderIcons[baby.gender]?.icon || '👶'}
 										{baby.gender === 'male' ? 'Männlich' : baby.gender === 'female' ? 'Weiblich' : 'Divers'}
                   </span>
+								</dd>
+							</div>
+							<div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+								<dt class="text-sm font-medium text-gray-500">Foto</dt>
+								<dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+									{#if baby.photoUrl}
+										<div class="flex items-center">
+											<div class="w-24 h-24 rounded-full overflow-hidden bg-gray-100">
+												<img src={baby.photoUrl} alt={baby.name} class="w-full h-full object-cover" />
+											</div>
+										</div>
+									{:else}
+										<div class="flex items-center">
+											<div class="w-24 h-24 rounded-full bg-gray-100 flex items-center justify-center">
+												<svg class="h-12 w-12 text-gray-300" fill="currentColor" viewBox="0 0 24 24">
+													<path d="M24 20.993V24H0v-2.996A14.977 14.977 0 0112.004 15c4.904 0 9.26 2.354 11.996 5.993zM16.002 8.999a4 4 0 11-8 0 4 4 0 018 0z" />
+												</svg>
+											</div>
+											<span class="ml-4 text-sm text-gray-500">Kein Foto vorhanden</span>
+										</div>
+									{/if}
 								</dd>
 							</div>
 						</dl>
@@ -697,28 +789,13 @@
 					<div class="mt-5 sm:mt-6 sm:grid sm:grid-cols-2 sm:gap-3 sm:grid-flow-row-dense">
 						<button
 							type="button"
-							on:click={generateQrCode}
+							on:click={openQrModal}
 							class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:col-start-2 sm:text-sm"
-							disabled={generatingQR}
 						>
-							{#if generatingQR}
-								<svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none"
-										 viewBox="0 0 24 24">
-									<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-									<path class="opacity-75" fill="currentColor"
-												d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-								</svg>
-								Wird generiert...
-							{:else}
-								Generieren
-							{/if}
-						</button>
-						<button
-							type="button"
-							on:click={() => (showQrModal = false)}
-							class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:col-start-1 sm:text-sm"
-						>
-							Abbrechen
+							<svg class="-ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+								<path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd" />
+							</svg>
+							Neuen QR-Code generieren
 						</button>
 					</div>
 				</div>
@@ -763,7 +840,7 @@
 											</div>
 										{/if}
 									</div>
-									<div class="px-4 py-4 sm:px-6">
+									<div class="px-4 py-4 sm:px-6 space-y-2">
 										<button
 											on:click={() => {
                         if (code.qrImage) {
@@ -783,6 +860,18 @@
 															clip-rule="evenodd" />
 											</svg>
 											Herunterladen
+										</button>
+										<button
+											on:click={() => deleteQrCode(code.id)}
+											class="w-full inline-flex justify-center items-center px-4 py-2 border border-red-300 shadow-sm text-sm font-medium rounded-md text-red-700 bg-white hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+										>
+											<svg class="-ml-1 mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"
+													 fill="currentColor">
+												<path fill-rule="evenodd"
+															d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"
+															clip-rule="evenodd" />
+											</svg>
+											Löschen
 										</button>
 									</div>
 								</div>

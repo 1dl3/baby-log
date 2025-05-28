@@ -2,92 +2,94 @@ import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { db } from '$lib/server/db';
 import { qrCode } from '$lib/server/db/schema';
-import { eq, and } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import QRCode from 'qrcode';
 
 // Delete a QR code by ID
 export const DELETE: RequestHandler = async ({ request, locals }) => {
-  if (!locals.user) {
-    return json({ error: 'Unauthorized' }, { status: 401 });
-  }
+	if (!locals.user) {
+		return json({ error: 'Unauthorized' }, { status: 401 });
+	}
 
-  const { id } = await request.json();
+	const { id } = await request.json();
 
-  try {
-    // Verify that the QR code belongs to the current user
-    const existingQrCode = await db.query.qrCode.findFirst({
-      where: and(
-        eq(qrCode.id, id),
-        eq(qrCode.userId, locals.user.id)
-      )
-    });
+	try {
+		// Verify that the QR code belongs to the current user
+		const existingQrCode = await db.query.qrCode.findFirst({
+			where: and(eq(qrCode.id, id), eq(qrCode.userId, locals.user.id))
+		});
 
-    if (!existingQrCode) {
-      return json({ error: 'QR code not found' }, { status: 404 });
-    }
+		if (!existingQrCode) {
+			return json({ error: 'QR code not found' }, { status: 404 });
+		}
 
-    // Delete the QR code
-    await db.delete(qrCode).where(eq(qrCode.id, id));
+		// Delete the QR code
+		await db.delete(qrCode).where(eq(qrCode.id, id));
 
-    return json({ success: true });
-  } catch (error) {
-    console.error('Error deleting QR code:', error);
-    return json({ error: 'Internal server error' }, { status: 500 });
-  }
+		return json({ success: true });
+	} catch (error) {
+		console.error('Error deleting QR code:', error);
+		return json({ error: 'Internal server error' }, { status: 500 });
+	}
 };
 
 // Generate a new QR code
 export const POST: RequestHandler = async ({ request, locals }) => {
 	if (!locals.user) {
-    return json({ error: 'Unauthorized' }, { status: 401 });
-  }
+		return json({ error: 'Unauthorized' }, { status: 401 });
+	}
 
-  const { babyId, type } = await request.json();
+	const { babyId, type } = await request.json();
 
-  try {
-    // Generate unique code
-    const code = `${type}-${babyId}-${Date.now()}`;
+	try {
+		// Generate unique code
+		const code = `${type}-${babyId}-${Date.now()}`;
+		console.log(process.env);
+		// Generate QR code image
+		const qrImage = await QRCode.toDataURL(`${process.env.APP_URL}/log/${type}/${code}`);
 
-    // Generate QR code image
-    const qrImage = await QRCode.toDataURL(`${process.env.APP_URL}/log/${type}/${code}`);
+		// Save QR code to database
+		const [newQrCode] = await db
+			.insert(qrCode)
+			.values({
+				userId: locals.user.id,
+				babyId,
+				type,
+				code
+			})
+			.returning();
 
-    // Save QR code to database
-    const [newQrCode] = await db.insert(qrCode).values({
-      userId: locals.user.id,
-      babyId,
-      type,
-      code
-    }).returning();
-
-    return json({ ...newQrCode, qrImage });
-  } catch (error) {
-    console.error('Error generating QR code:', error);
-    return json({ error: 'Internal server error' }, { status: 500 });
-  }
+		return json({ ...newQrCode, qrImage });
+	} catch (error) {
+		console.error('Error generating QR code:', error);
+		return json({ error: 'Internal server error' }, { status: 500 });
+	}
 };
 
 // Get all QR codes for a user
 export const GET: RequestHandler = async ({ locals }) => {
-  if (!locals.user) {
-    return json({ error: 'Unauthorized' }, { status: 401 });
-  }
+	if (!locals.user) {
+		return json({ error: 'Unauthorized' }, { status: 401 });
+	}
 
-  try {
-    const codes = await db.query.qrCode.findMany({
-      where: eq(qrCode.userId, locals.user.id)
-    });
+	try {
+		const codes = await db.query.qrCode.findMany({
+			where: eq(qrCode.userId, locals.user.id)
+		});
 
-    // Generate QR code images for each code
-    const codesWithImages = await Promise.all(
-      codes.map(async (code) => {
-        const qrImage = await QRCode.toDataURL(`${process.env.APP_URL}/log/${code.type}/${code.code}`);
-        return { ...code, qrImage };
-      })
-    );
+		// Generate QR code images for each code
+		const codesWithImages = await Promise.all(
+			codes.map(async (code) => {
+				const qrImage = await QRCode.toDataURL(
+					`${process.env.APP_URL}/log/${code.type}/${code.code}`
+				);
+				return { ...code, qrImage };
+			})
+		);
 
-    return json(codesWithImages);
-  } catch (error) {
-    console.error('Error fetching QR codes:', error);
-    return json({ error: 'Internal server error' }, { status: 500 });
-  }
-}; 
+		return json(codesWithImages);
+	} catch (error) {
+		console.error('Error fetching QR codes:', error);
+		return json({ error: 'Internal server error' }, { status: 500 });
+	}
+};

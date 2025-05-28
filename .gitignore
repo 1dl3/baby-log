@@ -282,3 +282,5 @@ package
 
 .env.*
 .env
+
+uploads/

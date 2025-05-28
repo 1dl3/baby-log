@@ -30,6 +30,7 @@ export const baby = pgTable('baby', {
 	name: text('name').notNull(),
 	birthDate: timestamp('birth_date').notNull(),
 	gender: text('gender').notNull(),
+	photoUrl: text('photo_url'),
 	createdAt: timestamp('created_at').notNull().defaultNow(),
 	shareCode: text('share_code').unique(),
 	shareCodeExpires: timestamp('share_code_expires')

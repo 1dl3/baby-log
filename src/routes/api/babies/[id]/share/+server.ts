@@ -1,10 +1,11 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { db } from '$lib/server/db';
-import { baby, sharedBaby } from '$lib/server/db/schema';
+import { baby, sharedBaby, user } from '$lib/server/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { generateToken } from '$lib/server/token';
 import { error } from '@sveltejs/kit';
+import QRCode from 'qrcode';
 
 export const POST: RequestHandler = async ({ params, locals }) => {
   const { id } = params;
@@ -59,7 +60,8 @@ export const PUT: RequestHandler = async ({ request, locals }) => {
     const foundBaby = await db.query.baby.findFirst({
       where: and(
         eq(baby.shareCode, shareCode),
-        eq(baby.shareCodeExpires, new Date(Date.now()))
+        // Check if the expiration time is greater than the current time
+        baby.shareCodeExpires.gte(new Date())
       )
     });
 
