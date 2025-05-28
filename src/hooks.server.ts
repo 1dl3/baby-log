@@ -12,7 +12,7 @@ import { eq } from 'drizzle-orm';
 export const handle: Handle = async ({ event, resolve }) => {
   // Get user ID from session
   const userId = await getSession(event);
-  
+
   if (userId) {
     // Fetch user data from database
     const userData = await db.query.user.findFirst({
@@ -20,19 +20,21 @@ export const handle: Handle = async ({ event, resolve }) => {
       columns: {
         id: true,
         email: true,
-        name: true
+        name: true,
+        emailVerified: true
       }
     });
-    
+
     if (userData) {
       // Set user data in locals
       event.locals.user = {
         id: userData.id,
         email: userData.email,
-        name: userData.name
+        name: userData.name,
+        emailVerified: userData.emailVerified
       };
     }
   }
-  
+
   return resolve(event);
 };

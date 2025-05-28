@@ -46,7 +46,8 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 		// Generate unique code
 		const code = `${type}-${babyId}-${Date.now()}`;
 		// Generate QR code image
-		const qrImage = await QRCode.toDataURL(`${env.APP_URL}/log/${type}/${code}`);
+		const link = `${env.APP_URL}/log/${type}/${code}`;
+		const qrImage = await QRCode.toDataURL(link);
 
 		// Save QR code to database
 		const [newQrCode] = await db
@@ -55,7 +56,8 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 				userId: locals.user.id,
 				babyId,
 				type,
-				code
+				code,
+				link
 			})
 			.returning();
 
@@ -80,9 +82,7 @@ export const GET: RequestHandler = async ({ locals }) => {
 		// Generate QR code images for each code
 		const codesWithImages = await Promise.all(
 			codes.map(async (code) => {
-				const qrImage = await QRCode.toDataURL(
-					`${env.APP_URL}/log/${code.type}/${code.code}`
-				);
+				const qrImage = await QRCode.toDataURL(`${env.APP_URL}/log/${code.type}/${code.code}`);
 				return { ...code, qrImage };
 			})
 		);

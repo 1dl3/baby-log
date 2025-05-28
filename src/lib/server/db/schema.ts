@@ -27,6 +27,8 @@ export const baby = pgTable('baby', {
 	userId: uuid('user_id')
 		.notNull()
 		.references(() => user.id, { onDelete: 'cascade' }),
+		// Note: userId should default to the logged-in user's ID when creating a new baby
+		// This is handled in the API endpoint that creates babies
 	name: text('name').notNull(),
 	birthDate: timestamp('birth_date').notNull(),
 	gender: text('gender').notNull(),
@@ -99,6 +101,7 @@ export const qrCode = pgTable('qr_code', {
 		.references(() => user.id, { onDelete: 'cascade' }),
 	type: varchar('type', { length: 50 }).notNull(), // diaper, feeding, nursing
 	code: varchar('code', { length: 255 }).notNull().unique(),
+	link: text('link').notNull().unique(),
 	createdAt: timestamp('created_at').defaultNow()
 });
 

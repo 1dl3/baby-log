@@ -1,7 +1,19 @@
 <script lang="ts">
 	import { page } from '$app/stores';
 	import UserInfo from './UserInfo.svelte';
-	import { clearUser, user } from '$lib/stores/user';
+	import { clearUser, user, setUser } from '$lib/stores/user';
+
+	export let userData: {
+		id?: string;
+		email?: string;
+		name?: string;
+		emailVerified?: boolean;
+	} | null = null;
+
+	// Initialize the user store with the user prop
+	$: if (userData) {
+		setUser(userData);
+	}
 
 	let isMenuOpen = false;
 	// Use the user prop to determine if the user is authenticated
@@ -29,6 +41,28 @@
 			console.error('Logout error:', err);
 		}
 	}
+
+	// Function to request a new verification email
+	async function requestVerificationEmail() {
+		try {
+			const response = await fetch('/api/auth/resend-verification', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json'
+				}
+			});
+
+			if (response.ok) {
+				alert('Verifizierungslink wurde erneut gesendet. Bitte überprüfe deinen Posteingang.');
+			} else {
+				const data = await response.json();
+				alert(data.error || 'Fehler beim Senden des Verifizierungslinks.');
+			}
+		} catch (err) {
+			console.error('Verification request error:', err);
+			alert('Fehler beim Senden des Verifizierungslinks.');
+		}
+	}
 </script>
 
 <div class="min-h-screen bg-gray-50 flex flex-col">
@@ -40,7 +74,7 @@
 					<div class="flex-shrink-0 flex items-center">
 						<a href="/" class="text-2xl font-bold text-indigo-600">Baby-Protokoll</a>
 					</div>
-					{#if user}
+					{#if $user}
 						<nav class="hidden sm:ml-6 sm:flex sm:space-x-8">
 							<a
 								href="/dashboard"
@@ -64,7 +98,7 @@
 					{/if}
 				</div>
 				<div class="hidden sm:ml-6 sm:flex sm:items-center">
-					{#if user}
+					{#if $user}
 						<button
 							on:click={logout}
 							class="ml-3 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
@@ -105,7 +139,7 @@
 		{#if isMenuOpen}
 			<div class="sm:hidden">
 				<div class="pt-2 pb-3 space-y-1">
-					{#if user}
+					{#if $user}
 						<a
 							href="/dashboard"
 							class="bg-indigo-50 border-indigo-500 text-indigo-700 block pl-3 pr-4 py-2 border-l-4 text-base font-medium {$page.url.pathname.startsWith('/dashboard') ? 'bg-indigo-50 border-indigo-500 text-indigo-700' : 'border-transparent text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800'}"
@@ -148,6 +182,35 @@
 			</div>
 		{/if}
 	</header>
+
+	<!-- Verification banner for unverified users -->
+	{#if $user && $user.emailVerified === false}
+		<div class="bg-yellow-50 border-b border-yellow-200">
+			<div class="max-w-7xl mx-auto py-3 px-4 sm:px-6 lg:px-8">
+				<div class="flex items-center justify-between flex-wrap">
+					<div class="w-0 flex-1 flex items-center">
+						<span class="flex p-2 rounded-lg bg-yellow-100">
+							<svg class="h-6 w-6 text-yellow-700" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+							</svg>
+						</span>
+						<p class="ml-3 font-medium text-yellow-700 truncate">
+							<span class="md:hidden">Bitte verifiziere deine E-Mail-Adresse.</span>
+							<span class="hidden md:inline">Deine E-Mail-Adresse wurde noch nicht verifiziert. Bitte überprüfe deinen Posteingang oder fordere einen neuen Verifizierungslink an.</span>
+						</p>
+					</div>
+					<div class="order-3 mt-2 flex-shrink-0 w-full sm:order-2 sm:mt-0 sm:w-auto">
+						<button
+							on:click={requestVerificationEmail}
+							class="flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-yellow-700 bg-yellow-100 hover:bg-yellow-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500"
+						>
+							Neuen Link anfordern
+						</button>
+					</div>
+				</div>
+			</div>
+		</div>
+	{/if}
 
 	<!-- Main content -->
 	<main class="flex-grow">

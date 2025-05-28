@@ -18,7 +18,7 @@
 
   onMount(async () => {
     try {
-      const response = await fetch(`/api/qr-codes/${code}`);
+      const response = await fetch(`/api/qr-codes/log/${code}`);
       if (!response.ok) {
         throw new Error('Invalid QR code');
       }
@@ -33,7 +33,7 @@
 
   async function handleSubmit() {
     try {
-      const endpoint = `/api/logs/${type}`;
+      const endpoint = `/api/baby-log/${type}`;
       const response = await fetch(endpoint, {
         method: 'POST',
         headers: {

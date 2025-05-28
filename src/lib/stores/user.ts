@@ -5,6 +5,7 @@ type User = {
   id?: string;
   email?: string;
   name?: string;
+  emailVerified?: boolean;
 } | null;
 
 // Create a writable store with initial value of null
