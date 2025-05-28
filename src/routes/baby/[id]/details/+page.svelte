@@ -2,6 +2,7 @@
  import { onMount } from 'svelte';
  import { page } from '$app/stores';
  import { fade, fly } from 'svelte/transition';
+ import {  user } from '$lib/stores/user';
 
 	// Define types for our data
 	interface Baby {
@@ -86,7 +87,7 @@
 		await fetchStatistics('feeding');
 		await fetchStatistics('nursing');
 		if (baby) {
-			isOwner = baby.userId === locals.user?.id;
+			isOwner = baby.userId === user?.id;
 			if (isOwner) {
 				await fetchSharedUsers();
 			}
@@ -1333,6 +1334,145 @@
 						class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:col-start-1 sm:text-sm"
 					>
 						Abbrechen
+					</button>
+				</div>
+			</div>
+		</div>
+	</div>
+{/if}
+
+<!-- Share Code Modal -->
+{#if showShareCodeModal}
+	<div transition:fade={{ duration: 200 }} class="fixed z-10 inset-0 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+		<div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+
+			<span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+
+			<div
+				in:fly={{ y: 10, duration: 300 }}
+				class="inline-block align-bottom bg-white rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full sm:p-6 z-20"
+			>
+				<div class="absolute top-0 right-0 pt-4 pr-4">
+					<button
+						on:click={() => (showShareCodeModal = false)}
+						type="button"
+						class="bg-white rounded-md text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+					>
+						<span class="sr-only">Schließen</span>
+						<svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+						</svg>
+					</button>
+				</div>
+
+				<div class="sm:flex sm:items-start">
+					<div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-indigo-100 sm:mx-0 sm:h-10 sm:w-10">
+						<svg class="h-6 w-6 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+							<path d="M15 8a3 3 0 10-2.977-2.63l-4.94 2.47a3 3 0 100 4.319l4.94 2.47a3 3 0 10.895-1.789l-4.94-2.47a3.027 3.027 0 000-.74l4.94-2.47C13.456 7.68 14.19 8 15 8z" />
+						</svg>
+					</div>
+					<div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
+						<h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title">
+							Teilungscode
+						</h3>
+						<div class="mt-2">
+							<p class="text-sm text-gray-500">
+								Teile diesen Code oder QR-Code mit anderen Benutzern, damit sie auf dieses Baby zugreifen können.
+								Der Code ist 24 Stunden gültig.
+							</p>
+						</div>
+					</div>
+				</div>
+
+				<div class="mt-5">
+					<div class="bg-gray-50 p-4 rounded-md">
+						<div class="flex items-center justify-between">
+							<span class="font-mono text-lg">{shareCode}</span>
+							<button
+								on:click={() => {
+									navigator.clipboard.writeText(shareCode);
+									successMessage = 'Code in die Zwischenablage kopiert!';
+									showSuccessMessage = true;
+									setTimeout(() => {
+										showSuccessMessage = false;
+									}, 3000);
+								}}
+								class="ml-2 inline-flex items-center px-2.5 py-1.5 border border-gray-300 shadow-sm text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+							>
+								<svg class="-ml-0.5 mr-1 h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+									<path d="M8 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z" />
+									<path d="M6 3a2 2 0 00-2 2v11a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2 3 3 0 01-3 3H9a3 3 0 01-3-3z" />
+								</svg>
+								Kopieren
+							</button>
+						</div>
+					</div>
+					{#if shareUrl}
+						<div class="mt-3">
+							<p class="text-sm text-gray-500 mb-2">Oder teile diesen Link:</p>
+							<div class="flex items-center">
+								<input
+									type="text"
+									readonly
+									value={shareUrl}
+									class="flex-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 bg-gray-50 text-gray-500 sm:text-sm"
+								/>
+								<button
+									on:click={() => {
+										navigator.clipboard.writeText(shareUrl);
+										successMessage = 'Link in die Zwischenablage kopiert!';
+										showSuccessMessage = true;
+										setTimeout(() => {
+											showSuccessMessage = false;
+										}, 3000);
+									}}
+									class="ml-2 inline-flex items-center px-2.5 py-1.5 border border-gray-300 shadow-sm text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+								>
+									<svg class="-ml-0.5 mr-1 h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+										<path d="M8 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z" />
+										<path d="M6 3a2 2 0 00-2 2v11a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2 3 3 0 01-3 3H9a3 3 0 01-3-3z" />
+									</svg>
+									Kopieren
+								</button>
+							</div>
+						</div>
+					{/if}
+				</div>
+
+				<div class="mt-5 text-center">
+					{#if shareQrImage}
+						<img src={shareQrImage} alt="Share QR Code" class="mx-auto h-48 w-48" />
+						<p class="mt-2 text-sm text-gray-500">
+							Scanne diesen QR-Code, um auf dieses Baby zuzugreifen.
+						</p>
+						<button
+							on:click={() => {
+								const link = document.createElement('a');
+								link.href = shareQrImage;
+								link.download = `share-qrcode-${baby.name}.png`;
+								link.click();
+							}}
+							class="mt-3 inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+						>
+							<svg class="-ml-0.5 mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+								<path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" />
+							</svg>
+							QR-Code herunterladen
+						</button>
+					{:else}
+						<div class="bg-gray-100 h-48 w-48 mx-auto flex items-center justify-center">
+							<span class="text-gray-400">QR Code nicht verfügbar</span>
+						</div>
+					{/if}
+				</div>
+
+				<div class="mt-5 sm:mt-6">
+					<button
+						type="button"
+						on:click={() => (showShareCodeModal = false)}
+						class="w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:text-sm"
+					>
+						Schließen
 					</button>
 				</div>
 			</div>
