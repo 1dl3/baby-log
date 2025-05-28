@@ -17,7 +17,7 @@ const transporter = nodemailer.createTransport({
 });
 
 export async function sendVerificationEmail(email: string, token: string) {
-  const verificationUrl = `${env.PUBLIC_APP_URL}/verify-email?token=${token}`;
+  const verificationUrl = `${env.APP_URL}/verify-email?token=${token}`;
   
   const mailOptions = {
     from: env.MAIL_FROM || '"Baby Protocol" <noreply@babyprotocol.com>',
@@ -35,7 +35,7 @@ export async function sendVerificationEmail(email: string, token: string) {
 }
 
 export async function sendPasswordResetEmail(email: string, token: string) {
-  const resetUrl = `${env.PUBLIC_APP_URL}/reset-password?token=${token}`;
+  const resetUrl = `${env.APP_URL}/reset-password?token=${token}`;
   
   const mailOptions = {
     from: env.MAIL_FROM || '"Baby Protocol" <noreply@babyprotocol.com>',

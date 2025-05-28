@@ -4,6 +4,7 @@ import { db } from '$lib/server/db';
 import { qrCode } from '$lib/server/db/schema';
 import { and, eq } from 'drizzle-orm';
 import QRCode from 'qrcode';
+import { env } from '$env/dynamic/private';
 
 // Delete a QR code by ID
 export const DELETE: RequestHandler = async ({ request, locals }) => {
@@ -44,9 +45,8 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 	try {
 		// Generate unique code
 		const code = `${type}-${babyId}-${Date.now()}`;
-		console.log(process.env);
 		// Generate QR code image
-		const qrImage = await QRCode.toDataURL(`${process.env.APP_URL}/log/${type}/${code}`);
+		const qrImage = await QRCode.toDataURL(`${env.APP_URL}/log/${type}/${code}`);
 
 		// Save QR code to database
 		const [newQrCode] = await db
@@ -81,7 +81,7 @@ export const GET: RequestHandler = async ({ locals }) => {
 		const codesWithImages = await Promise.all(
 			codes.map(async (code) => {
 				const qrImage = await QRCode.toDataURL(
-					`${process.env.APP_URL}/log/${code.type}/${code.code}`
+					`${env.APP_URL}/log/${code.type}/${code.code}`
 				);
 				return { ...code, qrImage };
 			})

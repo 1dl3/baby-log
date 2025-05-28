@@ -48,6 +48,19 @@
 	let photoFile: File | null = null;
 	let photoPreview: string | null = null;
 
+	// Sharing state variables
+	let isOwner = false;
+	let shareCode = '';
+	let shareQrImage = '';
+	let shareUrl = '';
+	let generatingShareCode = false;
+	let inviteEmail = '';
+	let inviteCanEdit = false;
+	let inviting = false;
+	let sharedUsers = [];
+	let loadingSharedUsers = false;
+	let showShareCodeModal = false;
+
 	function openQrModal() {
 		showQrModal = true;
 	}
@@ -72,8 +85,174 @@
 		await fetchStatistics('diaper');
 		await fetchStatistics('feeding');
 		await fetchStatistics('nursing');
+		if (baby) {
+			isOwner = baby.userId === locals.user?.id;
+			if (isOwner) {
+				await fetchSharedUsers();
+			}
+		}
 		loading = false;
 	});
+
+	async function fetchSharedUsers() {
+		if (!baby || !isOwner) return;
+
+		loadingSharedUsers = true;
+		try {
+			const res = await fetch(`/api/babies/${$page.params.id}/share/users`);
+			if (!res.ok) {
+				throw new Error('Failed to fetch shared users');
+			}
+			sharedUsers = await res.json();
+		} catch (err) {
+			console.error(err);
+			error = 'Fehler beim Laden der geteilten Benutzer';
+		} finally {
+			loadingSharedUsers = false;
+		}
+	}
+
+	async function generateShareCode() {
+		if (!baby || generatingShareCode) return;
+
+		generatingShareCode = true;
+		error = '';
+
+		try {
+			const res = await fetch(`/api/babies/${$page.params.id}/share`, {
+				method: 'POST'
+			});
+
+			if (!res.ok) throw new Error('Failed to generate share code');
+
+			const data = await res.json();
+			shareCode = data.shareCode;
+			shareQrImage = data.qrImage;
+			shareUrl = data.shareUrl;
+
+			showShareCodeModal = true;
+
+			// Show success message
+			successMessage = 'Teilungscode erfolgreich generiert!';
+			showSuccessMessage = true;
+			setTimeout(() => {
+				showSuccessMessage = false;
+			}, 3000);
+		} catch (err) {
+			console.error(err);
+			error = 'Fehler beim Generieren des Teilungscodes';
+		} finally {
+			generatingShareCode = false;
+		}
+	}
+
+	async function inviteUser() {
+		if (!baby || !inviteEmail || inviting) return;
+
+		inviting = true;
+		error = '';
+
+		try {
+			const res = await fetch(`/api/babies/${$page.params.id}/share`, {
+				method: 'PATCH',
+				headers: {
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify({
+					email: inviteEmail,
+					canEdit: inviteCanEdit
+				})
+			});
+
+			if (!res.ok) throw new Error('Failed to invite user');
+
+			// Reset form
+			inviteEmail = '';
+			inviteCanEdit = false;
+
+			// Refresh shared users list
+			await fetchSharedUsers();
+
+			// Show success message
+			successMessage = 'Benutzer erfolgreich eingeladen!';
+			showSuccessMessage = true;
+			setTimeout(() => {
+				showSuccessMessage = false;
+			}, 3000);
+		} catch (err) {
+			console.error(err);
+			error = 'Fehler beim Einladen des Benutzers';
+		} finally {
+			inviting = false;
+		}
+	}
+
+	async function removeSharedUser(userId: string) {
+		if (!baby || !isOwner) return;
+
+		error = '';
+
+		try {
+			const res = await fetch(`/api/babies/${$page.params.id}/share/users`, {
+				method: 'DELETE',
+				headers: {
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify({
+					sharedUserId: userId
+				})
+			});
+
+			if (!res.ok) throw new Error('Failed to remove shared user');
+
+			// Refresh shared users list
+			await fetchSharedUsers();
+
+			// Show success message
+			successMessage = 'Benutzer erfolgreich entfernt!';
+			showSuccessMessage = true;
+			setTimeout(() => {
+				showSuccessMessage = false;
+			}, 3000);
+		} catch (err) {
+			console.error(err);
+			error = 'Fehler beim Entfernen des Benutzers';
+		}
+	}
+
+	async function updateSharedUserPermissions(userId: string, canEdit: boolean) {
+		if (!baby || !isOwner) return;
+
+		error = '';
+
+		try {
+			const res = await fetch(`/api/babies/${$page.params.id}/share/users`, {
+				method: 'PATCH',
+				headers: {
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify({
+					sharedUserId: userId,
+					canEdit
+				})
+			});
+
+			if (!res.ok) throw new Error('Failed to update permissions');
+
+			// Refresh shared users list
+			await fetchSharedUsers();
+
+			// Show success message
+			successMessage = 'Berechtigungen erfolgreich aktualisiert!';
+			showSuccessMessage = true;
+			setTimeout(() => {
+				showSuccessMessage = false;
+			}, 3000);
+		} catch (err) {
+			console.error(err);
+			error = 'Fehler beim Aktualisieren der Berechtigungen';
+		}
+	}
 
 	async function generateQrCode() {
 		if (!baby || generatingQR) return;
@@ -450,6 +629,20 @@
 							d="M11 4a1 1 0 10-2 0v1a1 1 0 002 0V4zM10 7a1 1 0 011 1v1h2a1 1 0 110 2h-3a1 1 0 01-1-1V8a1 1 0 011-1zM16 9a1 1 0 100 2 1 1 0 000-2zM9 13a1 1 0 011-1h1a1 1 0 110 2v2a1 1 0 11-2 0v-3zM7 11a1 1 0 100-2H4a1 1 0 100 2h3zM17 13a1 1 0 01-1 1h-2a1 1 0 110-2h2a1 1 0 011 1zM16 17a1 1 0 100-2h-3a1 1 0 100 2h3z" />
 					</svg>
 					QR-Codes
+				</button>
+				<button
+					on:click={() => (activeTab = 'sharing')}
+					class={`${
+            activeTab === 'sharing'
+              ? 'border-indigo-500 text-indigo-600'
+              : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+          } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+				>
+					<svg class="-ml-0.5 mr-2 h-5 w-5 inline-block" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"
+							 fill="currentColor">
+						<path d="M15 8a3 3 0 10-2.977-2.63l-4.94 2.47a3 3 0 100 4.319l4.94 2.47a3 3 0 10.895-1.789l-4.94-2.47a3.027 3.027 0 000-.74l4.94-2.47C13.456 7.68 14.19 8 15 8z" />
+					</svg>
+					Teilen
 				</button>
 			</nav>
 		</div>
@@ -876,6 +1069,185 @@
 									</div>
 								</div>
 							{/each}
+						</div>
+					{/if}
+				</div>
+			</div>
+		{/if}
+
+		<!-- Sharing Tab -->
+		{#if activeTab === 'sharing'}
+			<div class="bg-white shadow overflow-hidden sm:rounded-lg">
+				<div class="px-4 py-5 sm:px-6">
+					<h3 class="text-lg leading-6 font-medium text-gray-900">Baby teilen</h3>
+					<p class="mt-1 max-w-2xl text-sm text-gray-500">Teile dieses Baby mit anderen Benutzern.</p>
+				</div>
+				<div class="border-t border-gray-200 px-4 py-5 sm:p-6">
+					{#if isOwner}
+						<!-- Share code generation -->
+						<div class="mb-8">
+							<h4 class="text-base font-medium text-gray-900 mb-2">Teilungscode generieren</h4>
+							<p class="text-sm text-gray-500 mb-4">
+								Generiere einen Teilungscode, den andere Benutzer verwenden können, um auf dieses Baby zuzugreifen.
+								Der Code ist 24 Stunden gültig.
+							</p>
+							<button
+								on:click={generateShareCode}
+								class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+								disabled={generatingShareCode}
+							>
+								{#if generatingShareCode}
+									<svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+										<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+										<path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+									</svg>
+									Code wird generiert...
+								{:else}
+									<svg class="-ml-1 mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+										<path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd" />
+									</svg>
+									Teilungscode generieren
+								{/if}
+							</button>
+						</div>
+
+						<!-- Invite user by email -->
+						<div class="mb-8">
+							<h4 class="text-base font-medium text-gray-900 mb-2">Benutzer per E-Mail einladen</h4>
+							<p class="text-sm text-gray-500 mb-4">
+								Lade einen Benutzer direkt per E-Mail ein, um auf dieses Baby zuzugreifen.
+							</p>
+							<form on:submit|preventDefault={inviteUser} class="space-y-4">
+								<div>
+									<label for="invite-email" class="block text-sm font-medium text-gray-700">E-Mail-Adresse</label>
+									<input
+										id="invite-email"
+										type="email"
+										bind:value={inviteEmail}
+										required
+										placeholder="beispiel@email.de"
+										class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+									/>
+								</div>
+								<div class="flex items-center">
+									<input
+										id="can-edit"
+										type="checkbox"
+										bind:checked={inviteCanEdit}
+										class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+									/>
+									<label for="can-edit" class="ml-2 block text-sm text-gray-900">
+										Bearbeiten erlauben
+									</label>
+								</div>
+								<div>
+									<button
+										type="submit"
+										class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+										disabled={inviting || !inviteEmail}
+									>
+										{#if inviting}
+											<svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+												<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+												<path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+											</svg>
+											Einladung wird gesendet...
+										{:else}
+											<svg class="-ml-1 mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+												<path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
+												<path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
+											</svg>
+											Einladen
+										{/if}
+									</button>
+								</div>
+							</form>
+						</div>
+
+						<!-- Shared users list -->
+						<div>
+							<h4 class="text-base font-medium text-gray-900 mb-2">Geteilte Benutzer</h4>
+							<p class="text-sm text-gray-500 mb-4">
+								Benutzer, mit denen dieses Baby geteilt ist.
+							</p>
+							{#if loadingSharedUsers}
+								<div class="flex justify-center py-4">
+									<div class="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+								</div>
+							{:else if sharedUsers.length === 0}
+								<div class="text-center py-6 bg-gray-50 rounded-lg">
+									<svg class="mx-auto h-10 w-10 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+										<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+									</svg>
+									<h3 class="mt-2 text-sm font-medium text-gray-900">Keine geteilten Benutzer</h3>
+									<p class="mt-1 text-sm text-gray-500">
+										Dieses Baby wurde noch mit keinem Benutzer geteilt.
+									</p>
+								</div>
+							{:else}
+								<div class="overflow-x-auto">
+									<table class="min-w-full divide-y divide-gray-200">
+										<thead class="bg-gray-50">
+										<tr>
+											<th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+												Benutzer
+											</th>
+											<th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+												Berechtigungen
+											</th>
+											<th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+												Aktionen
+											</th>
+										</tr>
+										</thead>
+										<tbody class="bg-white divide-y divide-gray-200">
+										{#each sharedUsers as sharedUser (sharedUser.id)}
+											<tr>
+												<td class="px-6 py-4 whitespace-nowrap">
+													<div class="flex items-center">
+														<div class="flex-shrink-0 h-10 w-10 bg-indigo-100 rounded-full flex items-center justify-center">
+															<span class="text-indigo-800 font-medium">{sharedUser.user.name.charAt(0).toUpperCase()}</span>
+														</div>
+														<div class="ml-4">
+															<div class="text-sm font-medium text-gray-900">{sharedUser.user.name}</div>
+															<div class="text-sm text-gray-500">{sharedUser.user.email}</div>
+														</div>
+													</div>
+												</td>
+												<td class="px-6 py-4 whitespace-nowrap">
+													<select
+														value={sharedUser.canEdit}
+														on:change={(e) => updateSharedUserPermissions(sharedUser.userId, e.target.value === 'true')}
+														class="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+													>
+														<option value={false}>Nur Lesen</option>
+														<option value={true}>Lesen & Bearbeiten</option>
+													</select>
+												</td>
+												<td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+													<button
+														on:click={() => removeSharedUser(sharedUser.userId)}
+														class="text-red-600 hover:text-red-900"
+													>
+														Entfernen
+													</button>
+												</td>
+											</tr>
+										{/each}
+										</tbody>
+									</table>
+								</div>
+							{/if}
+						</div>
+					{:else}
+						<div class="text-center py-10">
+							<svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+							</svg>
+							<h3 class="mt-2 text-sm font-medium text-gray-900">Keine Berechtigung</h3>
+							<p class="mt-1 text-sm text-gray-500">
+								Du bist nicht der Besitzer dieses Babys und kannst daher keine Teilungseinstellungen vornehmen.
+							</p>
 						</div>
 					{/if}
 				</div>

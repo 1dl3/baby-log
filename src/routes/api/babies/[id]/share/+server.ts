@@ -6,6 +6,7 @@ import { eq, and } from 'drizzle-orm';
 import { generateToken } from '$lib/server/token';
 import { error } from '@sveltejs/kit';
 import QRCode from 'qrcode';
+import { env } from '$env/dynamic/private';
 
 export const POST: RequestHandler = async ({ params, locals }) => {
   const { id } = params;
@@ -40,9 +41,79 @@ export const POST: RequestHandler = async ({ params, locals }) => {
       })
       .where(eq(baby.id, id));
 
-    return json({ shareCode });
+    // Generate QR code for the share link
+    const shareUrl = `${env.APP_URL}/baby/share/${shareCode}`;
+    const qrImage = await QRCode.toDataURL(shareUrl);
+
+    return json({ shareCode, qrImage, shareUrl });
   } catch (err) {
     console.error('Share code generation error:', err);
+    throw error(500, 'Interner Serverfehler');
+  }
+};
+
+// Invite a user via email
+export const PATCH: RequestHandler = async ({ request, params, locals }) => {
+  const { id } = params;
+  const userId = locals.user?.id;
+  const { email, canEdit } = await request.json();
+
+  if (!userId) {
+    throw error(401, 'Nicht autorisiert');
+  }
+
+  try {
+    // Check if user owns the baby
+    const foundBaby = await db.query.baby.findFirst({
+      where: and(
+        eq(baby.id, id),
+        eq(baby.userId, userId)
+      )
+    });
+
+    if (!foundBaby) {
+      throw error(404, 'Baby nicht gefunden');
+    }
+
+    // Find the user by email
+    const invitedUser = await db.query.user.findFirst({
+      where: eq(user.email, email)
+    });
+
+    if (!invitedUser) {
+      throw error(404, 'Benutzer nicht gefunden');
+    }
+
+    // Check if already shared
+    const existingShare = await db.query.sharedBaby.findFirst({
+      where: and(
+        eq(sharedBaby.babyId, id),
+        eq(sharedBaby.userId, invitedUser.id)
+      )
+    });
+
+    if (existingShare) {
+      // Update permissions if already shared
+      await db.update(sharedBaby)
+        .set({ canEdit })
+        .where(and(
+          eq(sharedBaby.babyId, id),
+          eq(sharedBaby.userId, invitedUser.id)
+        ));
+
+      return json({ message: 'Berechtigungen aktualisiert' });
+    }
+
+    // Create share
+    await db.insert(sharedBaby).values({
+      babyId: id,
+      userId: invitedUser.id,
+      canEdit
+    });
+
+    return json({ message: 'Benutzer erfolgreich eingeladen' });
+  } catch (err) {
+    console.error('User invitation error:', err);
     throw error(500, 'Interner Serverfehler');
   }
 };

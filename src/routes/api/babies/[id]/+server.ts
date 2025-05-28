@@ -1,8 +1,8 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { db } from '$lib/server/db';
-import { baby } from '$lib/server/db/schema';
-import { eq } from 'drizzle-orm';
+import { baby, sharedBaby } from '$lib/server/db/schema';
+import { eq, and } from 'drizzle-orm';
 import fs from 'fs';
 import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
@@ -24,8 +24,17 @@ export const GET: RequestHandler = async ({ params, locals }) => {
 
 		// Check if the user is authorized to access this baby
 		if (babyData.userId !== locals.user.id) {
-			// TODO: Check shared babies if implemented
-			return json({ error: 'Unauthorized' }, { status: 403 });
+			// Check if the baby is shared with the user
+			const sharedAccess = await db.query.sharedBaby.findFirst({
+				where: and(
+					eq(sharedBaby.babyId, params.id),
+					eq(sharedBaby.userId, locals.user.id)
+				)
+			});
+
+			if (!sharedAccess) {
+				return json({ error: 'Unauthorized' }, { status: 403 });
+			}
 		}
 
 		return json(babyData);
@@ -51,8 +60,22 @@ export const PUT: RequestHandler = async ({ request, params, locals }) => {
 			return json({ error: 'Baby not found' }, { status: 404 });
 		}
 
-		if (existingBaby.userId !== locals.user.id) {
-			// TODO: Check shared babies with edit permission if implemented
+		let hasEditPermission = existingBaby.userId === locals.user.id;
+
+		if (!hasEditPermission) {
+			// Check if the user has edit permission for this shared baby
+			const sharedAccess = await db.query.sharedBaby.findFirst({
+				where: and(
+					eq(sharedBaby.babyId, params.id),
+					eq(sharedBaby.userId, locals.user.id),
+					eq(sharedBaby.canEdit, true)
+				)
+			});
+
+			hasEditPermission = !!sharedAccess;
+		}
+
+		if (!hasEditPermission) {
 			return json({ error: 'Unauthorized' }, { status: 403 });
 		}
 
@@ -122,8 +145,9 @@ export const DELETE: RequestHandler = async ({ params, locals }) => {
 			return json({ error: 'Baby not found' }, { status: 404 });
 		}
 
+		// Only the owner can delete a baby (not shared users)
 		if (existingBaby.userId !== locals.user.id) {
-			return json({ error: 'Unauthorized' }, { status: 403 });
+			return json({ error: 'Unauthorized - only the owner can delete a baby' }, { status: 403 });
 		}
 
 		// Delete the baby's photo if it exists

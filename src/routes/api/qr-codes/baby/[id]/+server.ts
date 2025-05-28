@@ -4,6 +4,7 @@ import { db } from '$lib/server/db';
 import { qrCode, baby } from '$lib/server/db/schema';
 import { eq, and } from 'drizzle-orm';
 import QRCode from 'qrcode';
+import { env } from '$env/dynamic/private';
 
 // Get all QR codes for a specific baby
 export const GET: RequestHandler = async ({ params, locals }) => {
@@ -34,7 +35,7 @@ export const GET: RequestHandler = async ({ params, locals }) => {
     // Generate QR code images for each code
     const codesWithImages = await Promise.all(
       codes.map(async (code) => {
-        const qrImage = await QRCode.toDataURL(`${process.env.APP_URL}/log/${code.type}/${code.code}`);
+        const qrImage = await QRCode.toDataURL(`${env.APP_URL}/log/${code.type}/${code.code}`);
         return { ...code, qrImage };
       })
     );

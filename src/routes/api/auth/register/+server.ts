@@ -9,7 +9,6 @@ import { generateToken } from '$lib/server/token';
 
 export const POST: RequestHandler = async ({ request }) => {
   const { email, password, name } = await request.json();
-  console.log(request);
 
   try {
     // Check if user already exists
@@ -17,7 +16,6 @@ export const POST: RequestHandler = async ({ request }) => {
       where: eq(user.email, email)
     });
 
-    console.log(existingUser);
     if (existingUser) {
       return json({ error: 'Email bereits registriert' }, { status: 400 });
     }
