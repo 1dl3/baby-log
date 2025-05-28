@@ -36,7 +36,7 @@ vite.config.ts.timestamp-*
 .idea/**/usage.statistics.xml
 .idea/**/dictionaries
 .idea/**/shelf
-
+.idea/
 # AWS User-specific
 .idea/**/aws.xml
 
@@ -280,4 +280,5 @@ package
 
 # End of https://www.toptal.com/developers/gitignore/api/intellij+all,svelte,yarn,node
 
+.env.*
 .env

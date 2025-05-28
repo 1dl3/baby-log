@@ -1,24 +1,31 @@
 <script lang="ts">
   import { page } from '$app/stores';
-  import { onMount } from 'svelte';
 
-  export let user: { id?: string; email?: string } | null = null;
+  export let user: { id?: string; email?: string; name?: string } | null = null;
   let isMenuOpen = false;
-  let isAuthenticated = false;
 
-  onMount(() => {
-    // Check if user is authenticated by looking for a token in localStorage
-    // This is a simple check and should be replaced with a proper auth check
-    isAuthenticated = !!localStorage.getItem('token');
-  });
+  // Use the user prop to determine if the user is authenticated
+  $: isAuthenticated = !!user?.id;
 
   function toggleMenu() {
     isMenuOpen = !isMenuOpen;
   }
 
-  function logout() {
-    localStorage.removeItem('token');
-    window.location.href = '/login';
+  async function logout() {
+    try {
+      // Call the logout API endpoint
+      await fetch('/api/auth/logout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+
+      // Redirect to login page
+      window.location.href = '/login';
+    } catch (err) {
+      console.error('Logout error:', err);
+    }
   }
 </script>
 
