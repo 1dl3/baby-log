@@ -26,13 +26,13 @@
   let error = '';
   let selectedBaby: Baby | null = null;
   let showAddBabyModal = false;
-  let showQrModal = false;
   let newBabyName = '';
   let newBabyBirthDate = '';
   let newBabyGender: 'male' | 'female' | 'diverse' = 'male';
   let qrCodes: QRCode[] = [];
   let selectedQrType = 'diaper';
   let addingBaby = false;
+  let showQrModal = false;
   let generatingQR = false;
   let successMessage = '';
   let showSuccessMessage = false;

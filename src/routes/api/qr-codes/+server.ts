@@ -2,8 +2,39 @@ import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { db } from '$lib/server/db';
 import { qrCode } from '$lib/server/db/schema';
-import { eq } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 import QRCode from 'qrcode';
+
+// Delete a QR code by ID
+export const DELETE: RequestHandler = async ({ request, locals }) => {
+  if (!locals.user) {
+    return json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const { id } = await request.json();
+
+  try {
+    // Verify that the QR code belongs to the current user
+    const existingQrCode = await db.query.qrCode.findFirst({
+      where: and(
+        eq(qrCode.id, id),
+        eq(qrCode.userId, locals.user.id)
+      )
+    });
+
+    if (!existingQrCode) {
+      return json({ error: 'QR code not found' }, { status: 404 });
+    }
+
+    // Delete the QR code
+    await db.delete(qrCode).where(eq(qrCode.id, id));
+
+    return json({ success: true });
+  } catch (error) {
+    console.error('Error deleting QR code:', error);
+    return json({ error: 'Internal server error' }, { status: 500 });
+  }
+};
 
 // Generate a new QR code
 export const POST: RequestHandler = async ({ request, locals }) => {
@@ -16,7 +47,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
   try {
     // Generate unique code
     const code = `${type}-${babyId}-${Date.now()}`;
-    
+
     // Generate QR code image
     const qrImage = await QRCode.toDataURL(`${process.env.APP_URL}/log/${type}/${code}`);
 
