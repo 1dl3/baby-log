@@ -13,7 +13,10 @@
     notes: '',
     duration: 0,
     amount: 0,
-    side: 'both'
+    side: 'both',
+    photoUrl: '',
+    height: 0,
+    weight: 0
   };
 
   onMount(async () => {
@@ -34,16 +37,38 @@
   async function handleSubmit() {
     try {
       const endpoint = `/api/baby-log/${type}`;
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          babyId: baby.id,
-          ...formData
-        })
-      });
+      let response;
+
+      if (type === 'photo') {
+        // Handle photo upload with FormData
+        const photoInput = document.getElementById('photo') as HTMLInputElement;
+        if (!photoInput.files || photoInput.files.length === 0) {
+          error = 'Please select a photo to upload';
+          return;
+        }
+
+        const formDataObj = new FormData();
+        formDataObj.append('photo', photoInput.files[0]);
+        formDataObj.append('babyId', baby.id);
+        formDataObj.append('notes', formData.notes);
+
+        response = await fetch(endpoint, {
+          method: 'POST',
+          body: formDataObj
+        });
+      } else {
+        // Handle other log types with JSON
+        response = await fetch(endpoint, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            babyId: baby.id,
+            ...formData
+          })
+        });
+      }
 
       if (!response.ok) {
         throw new Error('Failed to save log');
@@ -173,6 +198,96 @@
                   <option value="right">Right</option>
                   <option value="both">Both</option>
                 </select>
+              </div>
+            </div>
+          {:else if type === 'photo'}
+            <div>
+              <label for="photo" class="block text-sm font-medium text-gray-700">
+                Photo
+              </label>
+              <div class="mt-1">
+                <input
+                  type="file"
+                  id="photo"
+                  name="photo"
+                  accept="image/*"
+                  class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                />
+              </div>
+              <p class="mt-2 text-sm text-gray-500">
+                Upload a photo of your baby
+              </p>
+            </div>
+            <div>
+              <label for="notes" class="block text-sm font-medium text-gray-700">
+                Notes
+              </label>
+              <div class="mt-1">
+                <textarea
+                  id="notes"
+                  name="notes"
+                  rows="3"
+                  bind:value={formData.notes}
+                  class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                ></textarea>
+              </div>
+            </div>
+          {:else if type === 'size'}
+            <div>
+              <label for="height" class="block text-sm font-medium text-gray-700">
+                Height (cm)
+              </label>
+              <div class="mt-1">
+                <input
+                  type="number"
+                  id="height"
+                  name="height"
+                  bind:value={formData.height}
+                  class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                />
+              </div>
+            </div>
+            <div>
+              <label for="notes" class="block text-sm font-medium text-gray-700">
+                Notes
+              </label>
+              <div class="mt-1">
+                <textarea
+                  id="notes"
+                  name="notes"
+                  rows="3"
+                  bind:value={formData.notes}
+                  class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                ></textarea>
+              </div>
+            </div>
+          {:else if type === 'weight'}
+            <div>
+              <label for="weight" class="block text-sm font-medium text-gray-700">
+                Weight (kg)
+              </label>
+              <div class="mt-1">
+                <input
+                  type="number"
+                  id="weight"
+                  name="weight"
+                  bind:value={formData.weight}
+                  class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                />
+              </div>
+            </div>
+            <div>
+              <label for="notes" class="block text-sm font-medium text-gray-700">
+                Notes
+              </label>
+              <div class="mt-1">
+                <textarea
+                  id="notes"
+                  name="notes"
+                  rows="3"
+                  bind:value={formData.notes}
+                  class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                ></textarea>
               </div>
             </div>
           {/if}

@@ -1,7 +1,7 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { db } from '$lib/server/db';
-import { diaperChange, feeding, nursing } from '$lib/server/db/schema';
+import { diaperChange, feeding, nursing, photo, size, weight } from '$lib/server/db/schema';
 
 export const POST: RequestHandler = async ({ request, params, locals }) => {
 	if (!locals.user) {
@@ -9,8 +9,32 @@ export const POST: RequestHandler = async ({ request, params, locals }) => {
 	}
 
 	const { type } = params;
-	const data = await request.json();
-	const { babyId, notes, duration, amount, side } = data;
+	let babyId, notes, duration, amount, side, photoUrl, height, weightValue;
+
+	// Handle different content types based on log type
+	if (type === 'photo') {
+		// Handle multipart form data for photo uploads
+		const formData = await request.formData();
+		babyId = formData.get('babyId') as string;
+		notes = formData.get('notes') as string;
+
+		// Handle the photo file
+		const photoFile = formData.get('photo') as File;
+		if (!photoFile) {
+			return json({ error: 'No photo provided' }, { status: 400 });
+		}
+
+		// In a real implementation, you would upload the file to a storage service
+		// and get back a URL. For this example, we'll just use a placeholder URL.
+		photoUrl = `/uploads/${Date.now()}_${photoFile.name}`;
+
+		// TODO: Implement actual file upload to a storage service
+		console.log(`Photo would be saved to: ${photoUrl}`);
+	} else {
+		// Handle JSON data for other log types
+		const data = await request.json();
+		({ babyId, notes, duration, amount, side, photoUrl, height, weight: weightValue } = data);
+	}
 
 	try {
 		let log;
@@ -50,6 +74,42 @@ export const POST: RequestHandler = async ({ request, params, locals }) => {
 						userId: locals.user.id,
 						duration,
 						side,
+						notes
+					})
+					.returning();
+				break;
+
+			case 'photo':
+				[log] = await db
+					.insert(photo)
+					.values({
+						babyId,
+						userId: locals.user.id,
+						photoUrl,
+						notes
+					})
+					.returning();
+				break;
+
+			case 'size':
+				[log] = await db
+					.insert(size)
+					.values({
+						babyId,
+						userId: locals.user.id,
+						height,
+						notes
+					})
+					.returning();
+				break;
+
+			case 'weight':
+				[log] = await db
+					.insert(weight)
+					.values({
+						babyId,
+						userId: locals.user.id,
+						weight: weightValue,
 						notes
 					})
 					.returning();

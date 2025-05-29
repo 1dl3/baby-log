@@ -48,7 +48,10 @@
 	const qrTypes = {
 		diaper: { name: 'Windel wechseln', icon: '🧷' },
 		feeding: { name: 'Fütterung', icon: '🍼' },
-		nursing: { name: 'Stillen', icon: '👩‍🍼' }
+		nursing: { name: 'Stillen', icon: '👩‍🍼' },
+		photo: { name: 'Foto', icon: '📷' },
+		size: { name: 'Größe', icon: '📏' },
+		weight: { name: 'Gewicht', icon: '⚖️' }
 	};
 
 	onMount(async () => {

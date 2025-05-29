@@ -1,4 +1,4 @@
-import { boolean, integer, pgTable, text, timestamp, uuid, varchar } from 'drizzle-orm/pg-core';
+import { boolean, integer, pgTable, text, timestamp, uuid, varchar, numeric } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 
 export const user = pgTable('user', {
@@ -99,10 +99,49 @@ export const qrCode = pgTable('qr_code', {
 	userId: uuid('user_id')
 		.notNull()
 		.references(() => user.id, { onDelete: 'cascade' }),
-	type: varchar('type', { length: 50 }).notNull(), // diaper, feeding, nursing
+	type: varchar('type', { length: 50 }).notNull(), // diaper, feeding, nursing, photo, size, weight
 	code: varchar('code', { length: 255 }).notNull().unique(),
 	link: text('link').notNull().unique(),
 	createdAt: timestamp('created_at').defaultNow()
+});
+
+export const photo = pgTable('photo', {
+	id: uuid('id').primaryKey().defaultRandom(),
+	babyId: uuid('baby_id')
+		.notNull()
+		.references(() => baby.id, { onDelete: 'cascade' }),
+	userId: uuid('user_id')
+		.notNull()
+		.references(() => user.id, { onDelete: 'cascade' }),
+	photoUrl: text('photo_url').notNull(),
+	notes: text('notes'),
+	timestamp: timestamp('timestamp').notNull().defaultNow()
+});
+
+export const size = pgTable('size', {
+	id: uuid('id').primaryKey().defaultRandom(),
+	babyId: uuid('baby_id')
+		.notNull()
+		.references(() => baby.id, { onDelete: 'cascade' }),
+	userId: uuid('user_id')
+		.notNull()
+		.references(() => user.id, { onDelete: 'cascade' }),
+	height: numeric('height').notNull(), // in cm
+	notes: text('notes'),
+	timestamp: timestamp('timestamp').notNull().defaultNow()
+});
+
+export const weight = pgTable('weight', {
+	id: uuid('id').primaryKey().defaultRandom(),
+	babyId: uuid('baby_id')
+		.notNull()
+		.references(() => baby.id, { onDelete: 'cascade' }),
+	userId: uuid('user_id')
+		.notNull()
+		.references(() => user.id, { onDelete: 'cascade' }),
+	weight: numeric('weight').notNull(), // in kg
+	notes: text('notes'),
+	timestamp: timestamp('timestamp').notNull().defaultNow()
 });
 
 // Relations
@@ -112,6 +151,9 @@ export const userRelations = relations(user, ({ many }) => ({
 	diaperChanges: many(diaperChange),
 	feedings: many(feeding),
 	nursingSessions: many(nursing),
+	photos: many(photo),
+	sizes: many(size),
+	weights: many(weight),
 	qrCodes: many(qrCode)
 }));
 
@@ -124,6 +166,9 @@ export const babyRelations = relations(baby, ({ one, many }) => ({
 	diaperChanges: many(diaperChange),
 	feedings: many(feeding),
 	nursingSessions: many(nursing),
+	photos: many(photo),
+	sizes: many(size),
+	weights: many(weight),
 	qrCodes: many(qrCode)
 }));
 
