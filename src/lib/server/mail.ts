@@ -2,14 +2,14 @@ import nodemailer from 'nodemailer';
 import { compileTemplate } from './email-templates/compile';
 import { env } from '$env/dynamic/private';
 
-// Create a transporter using MailDev
+// Create a transporter using SMTP settings from .env
 const transporter = nodemailer.createTransport({
-  host: env.MAIL_HOST || 'localhost',
-  port: parseInt(env.MAIL_PORT || '1025'),
-  secure: env.MAIL_SECURE === 'true',
-  auth: env.MAIL_USER && env.MAIL_PASSWORD ? {
-    user: env.MAIL_USER,
-    pass: env.MAIL_PASSWORD
+  host: env.SMTP_HOST || 'localhost',
+  port: parseInt(env.SMTP_PORT || '1025'),
+  secure: env.SMTP_SECURE === 'true',
+  auth: env.SMTP_USER && (env.SMTP_PASSWORD || env.SMTP_PASS) ? {
+    user: env.SMTP_USER,
+    pass: env.SMTP_PASSWORD || env.SMTP_PASS
   } : undefined,
   tls: {
     rejectUnauthorized: false
@@ -18,9 +18,9 @@ const transporter = nodemailer.createTransport({
 
 export async function sendVerificationEmail(email: string, token: string) {
   const verificationUrl = `${env.APP_URL}/verify-email?token=${token}`;
-  
+
   const mailOptions = {
-    from: env.MAIL_FROM || '"Baby Protocol" <noreply@babyprotocol.com>',
+    from: env.SMTP_FROM || '"Baby Protocol" <noreply@babyprotocol.com>',
     to: email,
     subject: 'Email Verifizierung',
     html: compileTemplate('verification', { verificationUrl })
@@ -36,9 +36,9 @@ export async function sendVerificationEmail(email: string, token: string) {
 
 export async function sendPasswordResetEmail(email: string, token: string) {
   const resetUrl = `${env.APP_URL}/reset-password?token=${token}`;
-  
+
   const mailOptions = {
-    from: env.MAIL_FROM || '"Baby Protocol" <noreply@babyprotocol.com>',
+    from: env.SMTP_FROM || '"Baby Protocol" <noreply@babyprotocol.com>',
     to: email,
     subject: 'Passwort zurücksetzen',
     html: compileTemplate('reset-password', { resetUrl })
