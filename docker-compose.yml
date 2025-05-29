@@ -9,6 +9,6 @@ services:
       POSTGRES_PASSWORD: t8mOlfcR5K9w0oQ
       POSTGRES_DB: local
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - babypgdata:/var/lib/postgresql/data
 volumes:
-  pgdata:
+  babypgdata:
