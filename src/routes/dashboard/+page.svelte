@@ -36,12 +36,12 @@
 	let loading = true;
 	let error = '';
 	let selectedBaby: Baby | null = null;
- let showAddBabyModal = false;
- let newBabyName = '';
- let newBabyBirthDate = '';
- let newBabyGender: 'male' | 'female' | 'diverse' = 'male';
- let addBabyMode: 'create' | 'share' = 'create';
- let shareLink = '';
+	let showAddBabyModal = false;
+	let newBabyName = '';
+	let newBabyBirthDate = '';
+	let newBabyGender: 'male' | 'female' | 'diverse' = 'male';
+	let addBabyMode: 'create' | 'share' = 'create';
+	let shareLink = '';
 	let qrCodes: QRCode[] = [];
 	let selectedQrType = 'diaper';
 	let addingBaby = false;
@@ -49,6 +49,15 @@
 	let generatingQR = false;
 	let successMessage = '';
 	let showSuccessMessage = false;
+
+	// Log entries state
+	let logEntries: LogEntry[] = [];
+	let loadingLogs = false;
+	let logError = '';
+	let currentPage = 1;
+	let totalPages = 1;
+	let logsPerPage = 10;
+	let selectedLogType = 'all';
 
 	// Map for gender icons and colors
 	const genderIcons = {
@@ -133,6 +142,9 @@
 			newBabyBirthDate = '';
 			newBabyGender = 'male';
 
+			// Select the newly added baby
+			selectBaby(newBaby);
+
 			// Show success message
 			successMessage = 'Baby erfolgreich hinzugefügt!';
 			showSuccessMessage = true;
@@ -204,6 +216,13 @@
 			showAddBabyModal = false;
 			shareLink = '';
 			addBabyMode = 'create';
+
+			// Find and select the newly added baby (the last one added)
+			// This is a simplification - in a real app, you might want to identify the specific baby that was added
+			if (babies.length > 0) {
+				const newlyAddedBaby = babies[babies.length - 1];
+				selectBaby(newlyAddedBaby);
+			}
 
 			// Show success message
 			successMessage = 'Baby erfolgreich hinzugefügt!';
@@ -277,6 +296,49 @@
 			const months = Math.floor(diffDays / 30);
 			return `${months} ${months === 1 ? 'Monat' : 'Monate'} alt`;
 		}
+	}
+
+	// Function to fetch log entries for the selected baby
+	async function fetchLogEntries() {
+		if (!selectedBaby) return;
+
+		loadingLogs = true;
+		logError = '';
+
+		try {
+			const params = new URLSearchParams({
+				babyId: selectedBaby.id.toString(),
+				page: currentPage.toString(),
+				limit: logsPerPage.toString()
+			});
+
+			if (selectedLogType !== 'all') {
+				params.append('type', selectedLogType);
+			}
+
+			const response = await fetch(`/api/baby-log?${params.toString()}`);
+
+			if (!response.ok) {
+				throw new Error('Failed to fetch log entries');
+			}
+
+			const data = await response.json();
+			logEntries = data.entries;
+			totalPages = data.pagination.totalPages;
+
+		} catch (err) {
+			logError = 'Fehler beim Laden der Protokolleinträge';
+			console.error('Error fetching log entries:', err);
+		} finally {
+			loadingLogs = false;
+		}
+	}
+
+	// Function to handle baby selection
+	function selectBaby(baby: Baby) {
+		selectedBaby = baby;
+		currentPage = 1;
+		fetchLogEntries();
 	}
 </script>
 
@@ -382,35 +444,38 @@
 					in:fly={{ y: 20, duration: 300, delay: i * 100 }}
 					out:fade={{ duration: 200 }}
 					animate:flip={{ duration: 300 }}
-					class="bg-white overflow-hidden shadow rounded-lg divide-y divide-gray-200 transition-all duration-200 hover:shadow-md"
+					class={`bg-white overflow-hidden shadow rounded-lg divide-y divide-gray-200 transition-all duration-200 hover:shadow-md ${selectedBaby?.id === baby.id ? 'ring-2 ring-indigo-500' : ''}`}
+					on:click={() => selectBaby(baby)}
 				>
-					<a href="/baby/{baby.id}/details">
-						<div class="px-4 py-5 sm:px-6 flex items-center">
-							<div class={`flex-shrink-0 rounded-full p-2 ${genderIcons[baby.gender]?.color || 'bg-gray-100'}`}>
-								{#if baby?.photoUrl}
-									<div class="relative w-24 h-24 rounded-full overflow-hidden bg-gray-100">
-										<img src={baby.photoUrl} alt={baby.name} class="w-full h-full object-cover" />
-									</div>
-								{:else}
-									<span class="text-2xl">{genderIcons[baby.gender]?.icon || '👶'}</span>
+					<div class="px-4 py-5 sm:px-6 flex items-center cursor-pointer">
+						<div class={`flex-shrink-0 rounded-full p-2 ${genderIcons[baby.gender]?.color || 'bg-gray-100'}`}>
+							{#if baby?.photoUrl}
+								<div class="relative w-24 h-24 rounded-full overflow-hidden bg-gray-100">
+									<img src={baby.photoUrl} alt={baby.name} class="w-full h-full object-cover" />
+								</div>
+							{:else}
+								<span class="text-2xl">{genderIcons[baby.gender]?.icon || '👶'}</span>
+							{/if}
+						</div>
+						<div class="ml-4">
+							<div class="flex items-center">
+								<h3 class="text-lg font-medium leading-6 text-gray-900">{baby.name}</h3>
+								{#if baby.isShared}
+									<span class="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+										Geteilt
+									</span>
+								{/if}
+								{#if selectedBaby?.id === baby.id}
+									<span class="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+										Ausgewählt
+									</span>
 								{/if}
 							</div>
-							<div class="ml-4">
-								<div class="flex items-center">
-									<h3 class="text-lg font-medium leading-6 text-gray-900">{baby.name}</h3>
-									{#if baby.isShared}
-										<span class="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-											Geteilt
-										</span>
-									{/if}
-								</div>
-								<p class="text-sm text-gray-500">
-									{formatDate(baby.birthDate)} · {calculateAge(baby.birthDate)}
-								</p>
-							</div>
+							<p class="text-sm text-gray-500">
+								{formatDate(baby.birthDate)} · {calculateAge(baby.birthDate)}
+							</p>
 						</div>
-
-					</a>
+					</div>
 
 					<div class="px-4 py-4 sm:px-6">
 						<div class="grid grid-cols-2 gap-4">
@@ -426,11 +491,351 @@
 								</svg>
 								Details
 							</a>
+							<button
+								on:click|stopPropagation={() => selectBaby(baby)}
+								class={`inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm ${selectedBaby?.id === baby.id ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-600 hover:bg-gray-700'} text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500`}>
+								<svg class="-ml-1 mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"
+										 fill="currentColor">
+									<path fill-rule="evenodd"
+												d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z"
+												clip-rule="evenodd" />
+								</svg>
+								{selectedBaby?.id === baby.id ? 'Ausgewählt' : 'Protokolle anzeigen'}
+							</button>
 						</div>
 					</div>
 
 				</div>
 			{/each}
+		</div>
+	{/if}
+
+	<!-- Log entries section -->
+	{#if selectedBaby}
+		<div class="mt-12">
+			<div class="border-b border-gray-200 pb-5 mb-6">
+				<h2 class="text-2xl font-bold leading-tight text-gray-900">Protokolleinträge für {selectedBaby.name}</h2>
+				<p class="mt-1 text-sm text-gray-500">Hier siehst du alle Protokolleinträge für das ausgewählte Baby.</p>
+			</div>
+
+			<!-- Log type filter -->
+			<div class="mb-6 flex flex-wrap items-center gap-2">
+				<span class="text-sm font-medium text-gray-700">Filtern nach:</span>
+				<select
+					bind:value={selectedLogType}
+					on:change={() => { currentPage = 1; fetchLogEntries(); }}
+					class="mt-1 block pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+				>
+					<option value="all">Alle Einträge</option>
+					<option value="diaper">Windel</option>
+					<option value="feeding">Fütterung</option>
+					<option value="nursing">Stillen</option>
+					<option value="sleep">Schlaf</option>
+					<option value="medication">Medikamente</option>
+					<option value="milestone">Meilensteine</option>
+					<option value="measurement">Messungen</option>
+					<option value="photo">Fotos</option>
+				</select>
+			</div>
+
+			<!-- Log error message -->
+			{#if logError}
+				<div class="mb-6 bg-red-50 border-l-4 border-red-400 p-4 rounded shadow-sm">
+					<div class="flex">
+						<div class="flex-shrink-0">
+							<svg class="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+								<path fill-rule="evenodd"
+											d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+											clip-rule="evenodd" />
+							</svg>
+						</div>
+						<div class="ml-3">
+							<p class="text-sm text-red-700">{logError}</p>
+						</div>
+					</div>
+				</div>
+			{/if}
+
+			<!-- Loading state -->
+			{#if loadingLogs}
+				<div class="flex flex-col items-center justify-center h-32">
+					<div class="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+					<p class="mt-2 text-sm text-gray-500">Lade Protokolleinträge...</p>
+				</div>
+			<!-- Empty state -->
+			{:else if logEntries.length === 0}
+				<div class="bg-white shadow overflow-hidden sm:rounded-lg">
+					<div class="px-4 py-12 sm:px-6 text-center">
+						<svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+								 aria-hidden="true">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+										d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+						</svg>
+						<h3 class="mt-2 text-lg font-medium text-gray-900">Keine Protokolleinträge gefunden</h3>
+						<p class="mt-1 text-sm text-gray-500">
+							{#if selectedLogType !== 'all'}
+								Es wurden keine Einträge vom Typ "{selectedLogType}" gefunden.
+							{:else}
+								Es wurden keine Protokolleinträge für dieses Baby gefunden.
+							{/if}
+						</p>
+					</div>
+				</div>
+			<!-- Log entries list -->
+			{:else}
+				<div class="bg-white shadow overflow-hidden sm:rounded-lg divide-y divide-gray-200">
+					{#each logEntries as entry (entry.id)}
+						<div class="px-4 py-4 sm:px-6 hover:bg-gray-50">
+							<div class="flex items-center justify-between">
+								<div class="flex items-center">
+									<!-- Icon based on log type -->
+									<div class="flex-shrink-0 h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center">
+										{#if entry.logType === 'diaper'}
+											<span class="text-xl">🧷</span>
+										{:else if entry.logType === 'feeding'}
+											<span class="text-xl">🍼</span>
+										{:else if entry.logType === 'nursing'}
+											<span class="text-xl">👩‍🍼</span>
+										{:else if entry.logType === 'sleep'}
+											<span class="text-xl">😴</span>
+										{:else if entry.logType === 'medication'}
+											<span class="text-xl">💊</span>
+										{:else if entry.logType === 'milestone'}
+											<span class="text-xl">🏆</span>
+										{:else if entry.logType === 'measurement'}
+											<span class="text-xl">📏</span>
+										{:else if entry.logType === 'photo'}
+											<span class="text-xl">📷</span>
+										{:else}
+											<span class="text-xl">📝</span>
+										{/if}
+									</div>
+									<div class="ml-4">
+										<!-- Log type title -->
+										<h4 class="text-lg font-medium text-gray-900">
+											{#if entry.logType === 'diaper'}
+												Windel gewechselt
+											{:else if entry.logType === 'feeding'}
+												Fütterung
+											{:else if entry.logType === 'nursing'}
+												Stillen
+											{:else if entry.logType === 'sleep'}
+												Schlaf
+											{:else if entry.logType === 'medication'}
+												Medikament: {entry.name}
+											{:else if entry.logType === 'milestone'}
+												Meilenstein: {entry.title}
+											{:else if entry.logType === 'measurement'}
+												Messung
+											{:else if entry.logType === 'photo'}
+												Foto
+											{:else}
+												Protokolleintrag
+											{/if}
+										</h4>
+										<!-- Log details based on type -->
+										<div class="mt-1">
+											{#if entry.logType === 'diaper'}
+												<p class="text-sm text-gray-500">
+													Typ: {entry.type === 'wet' ? 'Nass' : entry.type === 'dirty' ? 'Schmutzig' : 'Beides'}
+													{#if entry.notes}
+														· Notizen: {entry.notes}
+													{/if}
+												</p>
+											{:else if entry.logType === 'feeding'}
+												<p class="text-sm text-gray-500">
+													Typ: {entry.type === 'bottle' ? 'Flasche' : entry.type === 'nursing' ? 'Stillen' : 'Feste Nahrung'}
+													{#if entry.amount}
+														· Menge: {entry.amount} ml
+													{/if}
+													{#if entry.foodType}
+														· Nahrung: {entry.foodType}
+													{/if}
+													{#if entry.notes}
+														· Notizen: {entry.notes}
+													{/if}
+												</p>
+											{:else if entry.logType === 'nursing'}
+												<p class="text-sm text-gray-500">
+													Dauer: {entry.duration} Minuten · Seite: {entry.side === 'left' ? 'Links' : entry.side === 'right' ? 'Rechts' : 'Beide'}
+													{#if entry.notes}
+														· Notizen: {entry.notes}
+													{/if}
+												</p>
+											{:else if entry.logType === 'sleep'}
+												<p class="text-sm text-gray-500">
+													{#if entry.duration}
+														Dauer: {entry.duration} Minuten
+													{:else if entry.startTime && entry.endTime}
+														Von: {new Date(entry.startTime).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}
+														Bis: {new Date(entry.endTime).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}
+													{/if}
+													{#if entry.quality}
+														· Qualität: {entry.quality}
+													{/if}
+													{#if entry.notes}
+														· Notizen: {entry.notes}
+													{/if}
+												</p>
+											{:else if entry.logType === 'medication'}
+												<p class="text-sm text-gray-500">
+													Dosis: {entry.dosage} {entry.unit}
+													{#if entry.reason}
+														· Grund: {entry.reason}
+													{/if}
+													{#if entry.notes}
+														· Notizen: {entry.notes}
+													{/if}
+												</p>
+											{:else if entry.logType === 'milestone'}
+												<p class="text-sm text-gray-500">
+													Kategorie: {entry.category}
+													{#if entry.description}
+														· {entry.description}
+													{/if}
+												</p>
+											{:else if entry.logType === 'measurement'}
+												<p class="text-sm text-gray-500">
+													{#if entry.height}
+														Größe: {entry.height} cm
+													{/if}
+													{#if entry.weight}
+														{#if entry.height} · {/if}
+														Gewicht: {entry.weight} kg
+													{/if}
+													{#if entry.headCircumference}
+														{#if entry.height || entry.weight} · {/if}
+														Kopfumfang: {entry.headCircumference} cm
+													{/if}
+													{#if entry.notes}
+														· Notizen: {entry.notes}
+													{/if}
+												</p>
+											{:else if entry.logType === 'photo'}
+												<p class="text-sm text-gray-500">
+													{#if entry.notes}
+														Notizen: {entry.notes}
+													{:else}
+														Foto aufgenommen
+													{/if}
+												</p>
+											{/if}
+										</div>
+									</div>
+								</div>
+								<div class="text-right">
+									<p class="text-sm text-gray-500">
+										{new Date(entry.timestamp).toLocaleDateString('de-DE', { 
+											year: 'numeric', 
+											month: 'long', 
+											day: 'numeric',
+											hour: '2-digit',
+											minute: '2-digit'
+										})}
+									</p>
+								</div>
+							</div>
+						</div>
+					{/each}
+				</div>
+
+				<!-- Pagination -->
+				{#if totalPages > 1}
+					<div class="mt-6 flex items-center justify-between">
+						<div class="flex-1 flex justify-between sm:hidden">
+							<button
+								on:click={() => { if (currentPage > 1) { currentPage--; fetchLogEntries(); } }}
+								class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+								disabled={currentPage === 1}
+							>
+								Zurück
+							</button>
+							<button
+								on:click={() => { if (currentPage < totalPages) { currentPage++; fetchLogEntries(); } }}
+								class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+								disabled={currentPage === totalPages}
+							>
+								Weiter
+							</button>
+						</div>
+						<div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+							<div>
+								<p class="text-sm text-gray-700">
+									Seite <span class="font-medium">{currentPage}</span> von <span class="font-medium">{totalPages}</span>
+								</p>
+							</div>
+							<div>
+								<nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+									<button
+										on:click={() => { if (currentPage > 1) { currentPage = 1; fetchLogEntries(); } }}
+										class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
+										disabled={currentPage === 1}
+									>
+										<span class="sr-only">Erste Seite</span>
+										<svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+											<path fill-rule="evenodd" d="M15.707 15.707a1 1 0 01-1.414 0l-5-5a1 1 0 010-1.414l5-5a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd" />
+											<path fill-rule="evenodd" d="M7.707 15.707a1 1 0 01-1.414 0l-5-5a1 1 0 010-1.414l5-5a1 1 0 111.414 1.414L3.414 10l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd" />
+										</svg>
+									</button>
+									<button
+										on:click={() => { if (currentPage > 1) { currentPage--; fetchLogEntries(); } }}
+										class="relative inline-flex items-center px-2 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
+										disabled={currentPage === 1}
+									>
+										<span class="sr-only">Vorherige</span>
+										<svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+											<path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
+										</svg>
+									</button>
+
+									<!-- Page numbers -->
+									{#each Array(Math.min(5, totalPages)) as _, i}
+										{@const pageNum = currentPage <= 3 
+											? i + 1 
+											: currentPage >= totalPages - 2 
+												? totalPages - 4 + i 
+												: currentPage - 2 + i}
+										{#if pageNum > 0 && pageNum <= totalPages}
+											<button
+												on:click={() => { currentPage = pageNum; fetchLogEntries(); }}
+												class={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
+													currentPage === pageNum 
+														? 'z-10 bg-indigo-50 border-indigo-500 text-indigo-600' 
+														: 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
+												}`}
+											>
+												{pageNum}
+											</button>
+										{/if}
+									{/each}
+
+									<button
+										on:click={() => { if (currentPage < totalPages) { currentPage++; fetchLogEntries(); } }}
+										class="relative inline-flex items-center px-2 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
+										disabled={currentPage === totalPages}
+									>
+										<span class="sr-only">Nächste</span>
+										<svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+											<path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+										</svg>
+									</button>
+									<button
+										on:click={() => { if (currentPage < totalPages) { currentPage = totalPages; fetchLogEntries(); } }}
+										class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
+										disabled={currentPage === totalPages}
+									>
+										<span class="sr-only">Letzte Seite</span>
+										<svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+											<path fill-rule="evenodd" d="M4.293 15.707a1 1 0 001.414 0l5-5a1 1 0 000-1.414l-5-5a1 1 0 00-1.414 1.414L8.586 10 4.293 14.293a1 1 0 000 1.414z" clip-rule="evenodd" />
+											<path fill-rule="evenodd" d="M12.293 15.707a1 1 0 001.414 0l5-5a1 1 0 000-1.414l-5-5a1 1 0 00-1.414 1.414L16.586 10l-4.293 4.293a1 1 0 000 1.414z" clip-rule="evenodd" />
+										</svg>
+									</button>
+								</nav>
+							</div>
+						</div>
+					</div>
+				{/if}
+			{/if}
 		</div>
 	{/if}
 </main>
