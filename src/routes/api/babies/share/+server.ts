@@ -2,7 +2,7 @@ import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { db } from '$lib/server/db';
 import { baby, sharedBaby } from '$lib/server/db/schema';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, gte } from 'drizzle-orm';
 import { error } from '@sveltejs/kit';
 
 export const PUT: RequestHandler = async ({ request, locals }) => {
@@ -19,7 +19,7 @@ export const PUT: RequestHandler = async ({ request, locals }) => {
       where: and(
         eq(baby.shareCode, shareCode),
         // Check if the expiration time is greater than the current time
-        baby.shareCodeExpires.gte(new Date())
+				gte(baby.shareCodeExpires, new Date())
       )
     });
 

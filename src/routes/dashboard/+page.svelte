@@ -5,13 +5,15 @@
 	import { fade, fly } from 'svelte/transition';
 	import { flip } from 'svelte/animate';
 
-	// Define types for our data
-	interface Baby {
-		id: number;
-		name: string;
-		birthDate: string;
-		gender: 'male' | 'female' | 'diverse';
-	}
+ // Define types for our data
+ interface Baby {
+ 	id: number;
+ 	name: string;
+ 	birthDate: string;
+ 	gender: 'male' | 'female' | 'diverse';
+ 	isShared?: boolean;
+ 	canEdit?: boolean;
+ }
 
 	interface QRCode {
 		id: number;
@@ -62,15 +64,33 @@
 
 	onMount(async () => {
 		try {
-			const res = await fetch('/api/babies');
-			if (!res.ok) {
-				if (res.status === 401) {
+			// Fetch owned babies
+			const ownedRes = await fetch('/api/babies');
+			if (!ownedRes.ok) {
+				if (ownedRes.status === 401) {
 					goto('/login');
 					return;
 				}
 				throw new Error('Failed to fetch babies');
 			}
-			babies = await res.json();
+			const ownedBabies = await ownedRes.json();
+
+			// Fetch shared babies
+			const sharedRes = await fetch('/api/babies/shared');
+			let sharedBabies = [];
+
+			if (sharedRes.ok) {
+				const sharedData = await sharedRes.json();
+				// Transform shared babies data to match the Baby interface
+				sharedBabies = sharedData.map(item => ({
+					...item.baby,
+					isShared: true,
+					canEdit: item.canEdit
+				}));
+			}
+
+			// Combine owned and shared babies
+			babies = [...ownedBabies, ...sharedBabies];
 		} catch {
 			error = 'Fehler beim Laden der Babydaten';
 		} finally {
@@ -147,12 +167,29 @@
 				throw new Error(errorData.error || 'Failed to add baby');
 			}
 
-			// Refresh the babies list
-			const babiesRes = await fetch('/api/babies');
-			if (!babiesRes.ok) {
+			// Refresh the babies list - fetch both owned and shared babies
+			const ownedRes = await fetch('/api/babies');
+			if (!ownedRes.ok) {
 				throw new Error('Failed to fetch babies');
 			}
-			babies = await babiesRes.json();
+			const ownedBabies = await ownedRes.json();
+
+			// Fetch shared babies
+			const sharedRes = await fetch('/api/babies/shared');
+			let sharedBabies = [];
+
+			if (sharedRes.ok) {
+				const sharedData = await sharedRes.json();
+				// Transform shared babies data to match the Baby interface
+				sharedBabies = sharedData.map(item => ({
+					...item.baby,
+					isShared: true,
+					canEdit: item.canEdit
+				}));
+			}
+
+			// Combine owned and shared babies
+			babies = [...ownedBabies, ...sharedBabies];
 
 			// Close modal and reset form
 			showAddBabyModal = false;
@@ -350,7 +387,14 @@
 								{/if}
 							</div>
 							<div class="ml-4">
-								<h3 class="text-lg font-medium leading-6 text-gray-900">{baby.name}                </h3>
+								<div class="flex items-center">
+									<h3 class="text-lg font-medium leading-6 text-gray-900">{baby.name}</h3>
+									{#if baby.isShared}
+										<span class="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+											Geteilt
+										</span>
+									{/if}
+								</div>
 								<p class="text-sm text-gray-500">
 									{formatDate(baby.birthDate)} · {calculateAge(baby.birthDate)}
 								</p>
