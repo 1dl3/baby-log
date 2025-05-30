@@ -15,6 +15,15 @@
  	canEdit?: boolean;
  }
 
+ interface LogEntry {
+ 	id: string;
+ 	babyId: string;
+ 	userId: string;
+ 	timestamp: string;
+ 	logType: string;
+ 	[key: string]: any; // For additional properties based on log type
+ }
+
 	interface QRCode {
 		id: number;
 		babyId: number;
