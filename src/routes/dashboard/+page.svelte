@@ -25,10 +25,12 @@
 	let loading = true;
 	let error = '';
 	let selectedBaby: Baby | null = null;
-	let showAddBabyModal = false;
-	let newBabyName = '';
-	let newBabyBirthDate = '';
-	let newBabyGender: 'male' | 'female' | 'diverse' = 'male';
+ let showAddBabyModal = false;
+ let newBabyName = '';
+ let newBabyBirthDate = '';
+ let newBabyGender: 'male' | 'female' | 'diverse' = 'male';
+ let addBabyMode: 'create' | 'share' = 'create';
+ let shareLink = '';
 	let qrCodes: QRCode[] = [];
 	let selectedQrType = 'diaper';
 	let addingBaby = false;
@@ -51,7 +53,11 @@
 		nursing: { name: 'Stillen', icon: '👩‍🍼' },
 		photo: { name: 'Foto', icon: '📷' },
 		size: { name: 'Größe', icon: '📏' },
-		weight: { name: 'Gewicht', icon: '⚖️' }
+		weight: { name: 'Gewicht', icon: '⚖️' },
+		measurement: { name: 'Messung', icon: '📊' },
+		sleep: { name: 'Schlaf', icon: '😴' },
+		medication: { name: 'Medikament', icon: '💊' },
+		milestone: { name: 'Meilenstein', icon: '🏆' }
 	};
 
 	onMount(async () => {
@@ -112,9 +118,59 @@
 		}
 	}
 
-	function openQrModal(baby) {
-		selectedBaby = baby;
-		showQrModal = true;
+
+	async function handleAddBabyByShareCode() {
+		if (addingBaby) return;
+
+		addingBaby = true;
+		error = '';
+
+		try {
+			// Extract the share code from the input
+			let shareCode = shareLink.trim();
+
+			// If it's a URL, extract the code from it
+			if (shareCode.includes('/')) {
+				const parts = shareCode.split('/');
+				shareCode = parts[parts.length - 1];
+			}
+
+			// Make API request to add the baby using the share code
+			const res = await fetch('/api/babies/share', {
+				method: 'PUT',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ shareCode })
+			});
+
+			if (!res.ok) {
+				const errorData = await res.json();
+				throw new Error(errorData.error || 'Failed to add baby');
+			}
+
+			// Refresh the babies list
+			const babiesRes = await fetch('/api/babies');
+			if (!babiesRes.ok) {
+				throw new Error('Failed to fetch babies');
+			}
+			babies = await babiesRes.json();
+
+			// Close modal and reset form
+			showAddBabyModal = false;
+			shareLink = '';
+			addBabyMode = 'create';
+
+			// Show success message
+			successMessage = 'Baby erfolgreich hinzugefügt!';
+			showSuccessMessage = true;
+			setTimeout(() => {
+				showSuccessMessage = false;
+			}, 3000);
+
+		} catch (err) {
+			error = err.message || 'Fehler beim Hinzufügen des Babys';
+		} finally {
+			addingBaby = false;
+		}
 	}
 
 	async function generateQrCode() {
@@ -366,74 +422,145 @@
 						</h3>
 						<div class="mt-2">
 							<p class="text-sm text-gray-500">
-								Fülle die folgenden Informationen aus, um ein neues Baby hinzuzufügen.
+								Füge ein neues Baby hinzu oder verwende einen Teilungscode.
 							</p>
 						</div>
 					</div>
 				</div>
 
-				<form on:submit|preventDefault={handleAddBaby} class="mt-5 sm:mt-6 space-y-4">
-					<div>
-						<label for="baby-name" class="block text-sm font-medium text-gray-700">Name</label>
-						<input
-							id="baby-name"
-							type="text"
-							bind:value={newBabyName}
-							required
-							placeholder="Name des Babys"
-							class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-						/>
-					</div>
-					<div>
-						<label for="birth-date" class="block text-sm font-medium text-gray-700">Geburtsdatum</label>
-						<input
-							id="birth-date"
-							type="date"
-							bind:value={newBabyBirthDate}
-							required
-							class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-						/>
-					</div>
-					<div>
-						<label for="gender" class="block text-sm font-medium text-gray-700">Geschlecht</label>
-						<select
-							id="gender"
-							bind:value={newBabyGender}
-							required
-							class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
-						>
-							<option value="male">Männlich</option>
-							<option value="female">Weiblich</option>
-							<option value="diverse">Divers</option>
-						</select>
-					</div>
-					<div class="mt-5 sm:mt-6 sm:grid sm:grid-cols-2 sm:gap-3 sm:grid-flow-row-dense">
+				<!-- Tabs -->
+				<div class="mt-4 border-b border-gray-200">
+					<div class="flex -mb-px">
 						<button
-							type="submit"
-							class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:col-start-2 sm:text-sm"
-							disabled={addingBaby}
+							type="button"
+							class={"w-1/2 py-4 px-1 text-center border-b-2 font-medium text-sm " + 
+								(addBabyMode === 'create' 
+									? "border-indigo-500 text-indigo-600" 
+									: "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300")}
+							on:click={() => addBabyMode = 'create'}
 						>
-							{#if addingBaby}
-								<svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none"
-										 viewBox="0 0 24 24">
-									<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-									<path class="opacity-75" fill="currentColor"
-												d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-								</svg>
-								Wird hinzugefügt...
-							{:else}
-								Hinzufügen
-							{/if}
+							Neues Baby erstellen
 						</button>
 						<button
 							type="button"
-							on:click={() => (showAddBabyModal = false)}
-							class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:col-start-1 sm:text-sm"
+							class={"w-1/2 py-4 px-1 text-center border-b-2 font-medium text-sm " + 
+								(addBabyMode === 'share' 
+									? "border-indigo-500 text-indigo-600" 
+									: "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300")}
+							on:click={() => addBabyMode = 'share'}
 						>
-							Abbrechen
+							Teilungscode verwenden
 						</button>
 					</div>
-				</form>
+				</div>
+
+				{#if addBabyMode === 'create'}
+					<form on:submit|preventDefault={handleAddBaby} class="mt-5 sm:mt-6 space-y-4">
+						<div>
+							<label for="baby-name" class="block text-sm font-medium text-gray-700">Name</label>
+							<input
+								id="baby-name"
+								type="text"
+								bind:value={newBabyName}
+								required
+								placeholder="Name des Babys"
+								class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+							/>
+						</div>
+						<div>
+							<label for="birth-date" class="block text-sm font-medium text-gray-700">Geburtsdatum</label>
+							<input
+								id="birth-date"
+								type="date"
+								bind:value={newBabyBirthDate}
+								required
+								class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+							/>
+						</div>
+						<div>
+							<label for="gender" class="block text-sm font-medium text-gray-700">Geschlecht</label>
+							<select
+								id="gender"
+								bind:value={newBabyGender}
+								required
+								class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+							>
+								<option value="male">Männlich</option>
+								<option value="female">Weiblich</option>
+								<option value="diverse">Divers</option>
+							</select>
+						</div>
+						<div class="mt-5 sm:mt-6 sm:grid sm:grid-cols-2 sm:gap-3 sm:grid-flow-row-dense">
+							<button
+								type="submit"
+								class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:col-start-2 sm:text-sm"
+								disabled={addingBaby}
+							>
+								{#if addingBaby}
+									<svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none"
+											 viewBox="0 0 24 24">
+										<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+										<path class="opacity-75" fill="currentColor"
+													d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+									</svg>
+									Wird hinzugefügt...
+								{:else}
+									Hinzufügen
+								{/if}
+							</button>
+							<button
+								type="button"
+								on:click={() => (showAddBabyModal = false)}
+								class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:col-start-1 sm:text-sm"
+							>
+								Abbrechen
+							</button>
+						</div>
+					</form>
+				{:else}
+					<form on:submit|preventDefault={handleAddBabyByShareCode} class="mt-5 sm:mt-6 space-y-4">
+						<div>
+							<label for="share-link" class="block text-sm font-medium text-gray-700">Teilungscode oder Link</label>
+							<input
+								id="share-link"
+								type="text"
+								bind:value={shareLink}
+								required
+								placeholder="z.B. https://baby-protokoll.de/baby/share/abc123 oder abc123"
+								class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+							/>
+							<p class="mt-1 text-xs text-gray-500">
+								Gib den Teilungscode oder den vollständigen Link ein, den du erhalten hast.
+							</p>
+						</div>
+						<div class="mt-5 sm:mt-6 sm:grid sm:grid-cols-2 sm:gap-3 sm:grid-flow-row-dense">
+							<button
+								type="submit"
+								class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:col-start-2 sm:text-sm"
+								disabled={addingBaby}
+							>
+								{#if addingBaby}
+									<svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none"
+											 viewBox="0 0 24 24">
+										<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+										<path class="opacity-75" fill="currentColor"
+													d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+									</svg>
+									Wird hinzugefügt...
+								{:else}
+									Hinzufügen
+								{/if}
+							</button>
+							<button
+								type="button"
+								on:click={() => (showAddBabyModal = false)}
+								class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:col-start-1 sm:text-sm"
+							>
+								Abbrechen
+							</button>
+						</div>
+					</form>
+				{/if}
 			</div>
 		</div>
 	</div>
@@ -496,6 +623,10 @@
 						<option value="diaper">{qrTypes.diaper.icon} {qrTypes.diaper.name}</option>
 						<option value="feeding">{qrTypes.feeding.icon} {qrTypes.feeding.name}</option>
 						<option value="nursing">{qrTypes.nursing.icon} {qrTypes.nursing.name}</option>
+						<option value="measurement">{qrTypes.measurement.icon} {qrTypes.measurement.name}</option>
+						<option value="sleep">{qrTypes.sleep.icon} {qrTypes.sleep.name}</option>
+						<option value="medication">{qrTypes.medication.icon} {qrTypes.medication.name}</option>
+						<option value="milestone">{qrTypes.milestone.icon} {qrTypes.milestone.name}</option>
 					</select>
 				</div>
 

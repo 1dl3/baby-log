@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { page } from '$app/stores';
+	import { page } from '$app/state';
 	import { fade, fly } from 'svelte/transition';
 	import { user } from '$lib/stores/user';
 
@@ -32,6 +32,9 @@
 	let diaperStats: StatisticsData[] = [];
 	let feedingStats: StatisticsData[] = [];
 	let nursingStats: StatisticsData[] = [];
+	let sleepStats: StatisticsData[] = [];
+	let medicationStats: StatisticsData[] = [];
+	let milestoneStats: StatisticsData[] = [];
 	let loading = true;
 	let error = '';
 	let activeTab = 'settings';
@@ -77,7 +80,14 @@
 	const qrTypes = {
 		diaper: { name: 'Windel wechseln', icon: '🧷' },
 		feeding: { name: 'Fütterung', icon: '🍼' },
-		nursing: { name: 'Stillen', icon: '👩‍🍼' }
+		nursing: { name: 'Stillen', icon: '👩‍🍼' },
+		photo: { name: 'Foto', icon: '📷' },
+		size: { name: 'Größe', icon: '📏' },
+		weight: { name: 'Gewicht', icon: '⚖️' },
+		measurement: { name: 'Messung', icon: '📊' },
+		sleep: { name: 'Schlaf', icon: '😴' },
+		medication: { name: 'Medikament', icon: '💊' },
+		milestone: { name: 'Meilenstein', icon: '🏆' }
 	};
 
 	onMount(async () => {
@@ -86,6 +96,9 @@
 		await fetchStatistics('diaper');
 		await fetchStatistics('feeding');
 		await fetchStatistics('nursing');
+		await fetchStatistics('sleep');
+		await fetchStatistics('medication');
+		await fetchStatistics('milestone');
 		console.log(baby, $user)
 		if (baby) {
 			isOwner = baby.userId === $user?.id;
@@ -102,7 +115,7 @@
 
 		loadingSharedUsers = true;
 		try {
-			const res = await fetch(`/api/babies/${$page.params.id}/share/users`);
+			const res = await fetch(`/api/babies/${page.params.id}/share/users`);
 			if (!res.ok) {
 				throw new Error('Failed to fetch shared users');
 			}
@@ -122,7 +135,7 @@
 		error = '';
 
 		try {
-			const res = await fetch(`/api/babies/${$page.params.id}/share`, {
+			const res = await fetch(`/api/babies/${page.params.id}/share`, {
 				method: 'POST'
 			});
 
@@ -156,7 +169,7 @@
 		error = '';
 
 		try {
-			const res = await fetch(`/api/babies/${$page.params.id}/share`, {
+			const res = await fetch(`/api/babies/${page.params.id}/share`, {
 				method: 'PATCH',
 				headers: {
 					'Content-Type': 'application/json'
@@ -196,7 +209,7 @@
 		error = '';
 
 		try {
-			const res = await fetch(`/api/babies/${$page.params.id}/share/users`, {
+			const res = await fetch(`/api/babies/${page.params.id}/share/users`, {
 				method: 'DELETE',
 				headers: {
 					'Content-Type': 'application/json'
@@ -229,7 +242,7 @@
 		error = '';
 
 		try {
-			const res = await fetch(`/api/babies/${$page.params.id}/share/users`, {
+			const res = await fetch(`/api/babies/${page.params.id}/share/users`, {
 				method: 'PATCH',
 				headers: {
 					'Content-Type': 'application/json'
@@ -297,7 +310,7 @@
 
 	async function fetchBabyData() {
 		try {
-			const res = await fetch(`/api/babies/${$page.params.id}`);
+			const res = await fetch(`/api/babies/${page.params.id}`);
 			if (!res.ok) {
 				if (res.status === 401) {
 					window.location.href = '/login';
@@ -322,7 +335,7 @@
 
 	async function fetchQRCodes() {
 		try {
-			const res = await fetch(`/api/qr-codes/baby/${$page.params.id}`);
+			const res = await fetch(`/api/qr-codes/baby/${page.params.id}`);
 			if (!res.ok) {
 				throw new Error('Failed to fetch QR codes');
 			}
@@ -362,7 +375,7 @@
 
 	async function fetchStatistics(type: string) {
 		try {
-			const res = await fetch(`/api/statistics?babyId=${$page.params.id}&type=${type}&startDate=${statsStartDate}&endDate=${statsEndDate}`);
+			const res = await fetch(`/api/statistics?babyId=${page.params.id}&type=${type}&startDate=${statsStartDate}&endDate=${statsEndDate}`);
 			if (!res.ok) {
 				throw new Error(`Failed to fetch ${type} statistics`);
 			}
@@ -374,6 +387,12 @@
 				feedingStats = data;
 			} else if (type === 'nursing') {
 				nursingStats = data;
+			} else if (type === 'sleep') {
+				sleepStats = data;
+			} else if (type === 'medication') {
+				medicationStats = data;
+			} else if (type === 'milestone') {
+				milestoneStats = data;
 			}
 		} catch (err) {
 			error = `Fehler beim Laden der ${type} Statistiken`;
@@ -399,7 +418,7 @@
 				formData.append('photo', photoFile);
 			}
 
-			const res = await fetch(`/api/babies/${$page.params.id}`, {
+			const res = await fetch(`/api/babies/${page.params.id}`, {
 				method: 'PUT',
 				body: formData
 			});
@@ -849,6 +868,9 @@
 								<option value="diaper">{qrTypes.diaper.icon} {qrTypes.diaper.name}</option>
 								<option value="feeding">{qrTypes.feeding.icon} {qrTypes.feeding.name}</option>
 								<option value="nursing">{qrTypes.nursing.icon} {qrTypes.nursing.name}</option>
+								<option value="sleep">{qrTypes.sleep.icon} {qrTypes.sleep.name}</option>
+								<option value="medication">{qrTypes.medication.icon} {qrTypes.medication.name}</option>
+								<option value="milestone">{qrTypes.milestone.icon} {qrTypes.milestone.name}</option>
 							</select>
 						</div>
 						<div>
@@ -958,6 +980,83 @@
 											class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(stat.date).toLocaleDateString('de-DE')}</td>
 										<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{stat.count}</td>
 										<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{stat.totalDuration}</td>
+									</tr>
+								{/each}
+								</tbody>
+							</table>
+						</div>
+					{:else if statsType === 'sleep' && sleepStats.length > 0}
+						<div class="overflow-x-auto">
+							<table class="min-w-full divide-y divide-gray-200">
+								<thead class="bg-gray-50">
+								<tr>
+									<th scope="col"
+											class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Datum
+									</th>
+									<th scope="col"
+											class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Anzahl
+									</th>
+									<th scope="col"
+											class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gesamtdauer
+										(Min)
+									</th>
+								</tr>
+								</thead>
+								<tbody class="bg-white divide-y divide-gray-200">
+								{#each sleepStats as stat (stat.date)}
+									<tr>
+										<td
+											class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(stat.date).toLocaleDateString('de-DE')}</td>
+										<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{stat.count}</td>
+										<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{stat.totalDuration}</td>
+									</tr>
+								{/each}
+								</tbody>
+							</table>
+						</div>
+					{:else if statsType === 'medication' && medicationStats.length > 0}
+						<div class="overflow-x-auto">
+							<table class="min-w-full divide-y divide-gray-200">
+								<thead class="bg-gray-50">
+								<tr>
+									<th scope="col"
+											class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Datum
+									</th>
+									<th scope="col"
+											class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Anzahl
+									</th>
+								</tr>
+								</thead>
+								<tbody class="bg-white divide-y divide-gray-200">
+								{#each medicationStats as stat (stat.date)}
+									<tr>
+										<td
+											class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(stat.date).toLocaleDateString('de-DE')}</td>
+										<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{stat.count}</td>
+									</tr>
+								{/each}
+								</tbody>
+							</table>
+						</div>
+					{:else if statsType === 'milestone' && milestoneStats.length > 0}
+						<div class="overflow-x-auto">
+							<table class="min-w-full divide-y divide-gray-200">
+								<thead class="bg-gray-50">
+								<tr>
+									<th scope="col"
+											class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Datum
+									</th>
+									<th scope="col"
+											class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Anzahl
+									</th>
+								</tr>
+								</thead>
+								<tbody class="bg-white divide-y divide-gray-200">
+								{#each milestoneStats as stat (stat.date)}
+									<tr>
+										<td
+											class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(stat.date).toLocaleDateString('de-DE')}</td>
+										<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{stat.count}</td>
 									</tr>
 								{/each}
 								</tbody>
@@ -1339,6 +1438,10 @@
 						<option value="diaper">{qrTypes.diaper.icon} {qrTypes.diaper.name}</option>
 						<option value="feeding">{qrTypes.feeding.icon} {qrTypes.feeding.name}</option>
 						<option value="nursing">{qrTypes.nursing.icon} {qrTypes.nursing.name}</option>
+						<option value="measurement">{qrTypes.measurement.icon} {qrTypes.measurement.name}</option>
+						<option value="sleep">{qrTypes.sleep.icon} {qrTypes.sleep.name}</option>
+						<option value="medication">{qrTypes.medication.icon} {qrTypes.medication.name}</option>
+						<option value="milestone">{qrTypes.milestone.icon} {qrTypes.milestone.name}</option>
 					</select>
 				</div>
 

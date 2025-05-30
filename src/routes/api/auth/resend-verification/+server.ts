@@ -1,8 +1,8 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { db } from '$lib/server/db';
-import { user } from '$lib/server/db/schema';
-import { eq } from 'drizzle-orm';
+import { user, userToken } from '$lib/server/db/schema';
+import { eq, and } from 'drizzle-orm';
 import { sendVerificationEmail } from '$lib/server/mail';
 import { generateToken } from '$lib/server/token';
 
@@ -35,10 +35,22 @@ export const POST: RequestHandler = async ({ locals }) => {
     // Generate new verification token
     const verificationToken = generateToken();
 
-    // Update user with new verification token
-    await db.update(user)
-      .set({ verificationToken })
-      .where(eq(user.id, userData.id));
+    // Delete any existing verification tokens for this user
+    await db.delete(userToken)
+      .where(
+        and(
+          eq(userToken.userId, userData.id),
+          eq(userToken.type, 'verification')
+        )
+      );
+
+    // Create a new verification token in the token table
+    await db.insert(userToken).values({
+      userId: userData.id,
+      type: 'verification',
+      token: verificationToken,
+      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 days from now
+    });
 
     // Send verification email
     await sendVerificationEmail(userData.email, verificationToken);

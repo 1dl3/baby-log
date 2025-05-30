@@ -2,7 +2,7 @@ import { boolean, integer, pgTable, text, timestamp, uuid, varchar, numeric } fr
 import { relations } from 'drizzle-orm';
 
 // Define the log item types for the itemPhoto relation
-export type LogItemType = 'diaperChange' | 'feeding' | 'nursing' | 'measurement';
+export type LogItemType = 'diaperChange' | 'feeding' | 'nursing' | 'measurement' | 'sleep' | 'medication' | 'milestone';
 
 export const user = pgTable('user', {
 	id: uuid('id').primaryKey().defaultRandom(),
@@ -93,6 +93,10 @@ export const feeding = pgTable('feeding', {
 		.references(() => user.id, { onDelete: 'cascade' }),
 	type: text('type').notNull(), // bottle, nursing, solid
 	amount: integer('amount'), // in ml for bottle, null for nursing
+	foodType: text('food_type'), // for solid foods: fruit, vegetable, grain, protein, dairy, etc.
+	foodDetails: text('food_details'), // specific food item
+	consistency: text('consistency'), // for solid foods: puree, mashed, small pieces, etc.
+	reaction: text('reaction'), // liked, disliked, allergic, etc.
 	notes: text('notes'),
 	timestamp: timestamp('timestamp').notNull().defaultNow()
 });
@@ -233,7 +237,10 @@ export const userRelations = relations(user, ({ many }) => ({
 	photos: many(photo),
 	measurements: many(measurement),
 	qrCodes: many(qrCode),
-	tokens: many(userToken)
+	tokens: many(userToken),
+	sleepRecords: many(sleep),
+	medications: many(medication),
+	milestones: many(milestone)
 }));
 
 export const userTokenRelations = relations(userToken, ({ one }) => ({
@@ -254,7 +261,10 @@ export const babyRelations = relations(baby, ({ one, many }) => ({
 	nursingSessions: many(nursing),
 	photos: many(photo),
 	measurements: many(measurement),
-	qrCodes: many(qrCode)
+	qrCodes: many(qrCode),
+	sleepRecords: many(sleep),
+	medications: many(medication),
+	milestones: many(milestone)
 }));
 
 export const sharedBabyRelations = relations(sharedBaby, ({ one }) => ({
@@ -275,6 +285,39 @@ export const measurementRelations = relations(measurement, ({ one }) => ({
 	}),
 	user: one(user, {
 		fields: [measurement.userId],
+		references: [user.id]
+	})
+}));
+
+export const sleepRelations = relations(sleep, ({ one }) => ({
+	baby: one(baby, {
+		fields: [sleep.babyId],
+		references: [baby.id]
+	}),
+	user: one(user, {
+		fields: [sleep.userId],
+		references: [user.id]
+	})
+}));
+
+export const medicationRelations = relations(medication, ({ one }) => ({
+	baby: one(baby, {
+		fields: [medication.babyId],
+		references: [baby.id]
+	}),
+	user: one(user, {
+		fields: [medication.userId],
+		references: [user.id]
+	})
+}));
+
+export const milestoneRelations = relations(milestone, ({ one }) => ({
+	baby: one(baby, {
+		fields: [milestone.babyId],
+		references: [baby.id]
+	}),
+	user: one(user, {
+		fields: [milestone.userId],
 		references: [user.id]
 	})
 }));

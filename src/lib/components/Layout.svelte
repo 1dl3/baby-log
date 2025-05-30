@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { page } from '$app/stores';
+	import { page } from '$app/state';
 	import UserInfo from './UserInfo.svelte';
 	import { clearUser, user, setUser } from '$lib/stores/user';
 	import { onMount } from 'svelte';
@@ -96,19 +96,19 @@
 						<nav class="hidden sm:ml-6 sm:flex sm:space-x-8">
 							<a
 								href="/dashboard"
-								class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium {$page.url.pathname.startsWith('/dashboard') ? 'border-indigo-500 text-gray-900' : ''}"
+								class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium {page.url.pathname.startsWith('/dashboard') ? 'border-indigo-500 text-gray-900' : ''}"
 							>
 								Dashboard
 							</a>
 							<a
 								href="/log"
-								class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium {$page.url.pathname.startsWith('/log') ? 'border-indigo-500 text-gray-900' : ''}"
+								class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium {page.url.pathname.startsWith('/log') ? 'border-indigo-500 text-gray-900' : ''}"
 							>
 								Aktivitäten
 							</a>
 							<a
 								href="/statistics"
-								class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium {$page.url.pathname.startsWith('/statistics') ? 'border-indigo-500 text-gray-900' : ''}"
+								class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium {page.url.pathname.startsWith('/statistics') ? 'border-indigo-500 text-gray-900' : ''}"
 							>
 								Statistiken
 							</a>
@@ -160,19 +160,19 @@
 					{#if $user}
 						<a
 							href="/dashboard"
-							class="bg-indigo-50 border-indigo-500 text-indigo-700 block pl-3 pr-4 py-2 border-l-4 text-base font-medium {$page.url.pathname.startsWith('/dashboard') ? 'bg-indigo-50 border-indigo-500 text-indigo-700' : 'border-transparent text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800'}"
+							class="bg-indigo-50 border-indigo-500 text-indigo-700 block pl-3 pr-4 py-2 border-l-4 text-base font-medium {page.url.pathname.startsWith('/dashboard') ? 'bg-indigo-50 border-indigo-500 text-indigo-700' : 'border-transparent text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800'}"
 						>
 							Dashboard
 						</a>
 						<a
 							href="/log"
-							class="border-transparent text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800 block pl-3 pr-4 py-2 border-l-4 text-base font-medium {$page.url.pathname.startsWith('/log') ? 'bg-indigo-50 border-indigo-500 text-indigo-700' : ''}"
+							class="border-transparent text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800 block pl-3 pr-4 py-2 border-l-4 text-base font-medium {page.url.pathname.startsWith('/log') ? 'bg-indigo-50 border-indigo-500 text-indigo-700' : ''}"
 						>
 							Aktivitäten
 						</a>
 						<a
 							href="/statistics"
-							class="border-transparent text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800 block pl-3 pr-4 py-2 border-l-4 text-base font-medium {$page.url.pathname.startsWith('/statistics') ? 'bg-indigo-50 border-indigo-500 text-indigo-700' : ''}"
+							class="border-transparent text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800 block pl-3 pr-4 py-2 border-l-4 text-base font-medium {page.url.pathname.startsWith('/statistics') ? 'bg-indigo-50 border-indigo-500 text-indigo-700' : ''}"
 						>
 							Statistiken
 						</a>
@@ -185,13 +185,13 @@
 					{:else}
 						<a
 							href="/login"
-							class="border-transparent text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800 block pl-3 pr-4 py-2 border-l-4 text-base font-medium {$page.url.pathname === '/login' ? 'bg-indigo-50 border-indigo-500 text-indigo-700' : ''}"
+							class="border-transparent text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800 block pl-3 pr-4 py-2 border-l-4 text-base font-medium {page.url.pathname === '/login' ? 'bg-indigo-50 border-indigo-500 text-indigo-700' : ''}"
 						>
 							Anmelden
 						</a>
 						<a
 							href="/register"
-							class="border-transparent text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800 block pl-3 pr-4 py-2 border-l-4 text-base font-medium {$page.url.pathname === '/register' ? 'bg-indigo-50 border-indigo-500 text-indigo-700' : ''}"
+							class="border-transparent text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800 block pl-3 pr-4 py-2 border-l-4 text-base font-medium {page.url.pathname === '/register' ? 'bg-indigo-50 border-indigo-500 text-indigo-700' : ''}"
 						>
 							Registrieren
 						</a>

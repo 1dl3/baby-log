@@ -1,7 +1,17 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { db } from '$lib/server/db';
-import { diaperChange, feeding, nursing, photo, size, weight, measurement, itemPhoto } from '$lib/server/db/schema';
+import {
+	diaperChange,
+	feeding,
+	itemPhoto,
+	measurement,
+	medication,
+	milestone,
+	nursing,
+	photo,
+	sleep
+} from '$lib/server/db/schema';
 
 export const POST: RequestHandler = async ({ request, params, locals }) => {
 	if (!locals.user) {
@@ -9,7 +19,32 @@ export const POST: RequestHandler = async ({ request, params, locals }) => {
 	}
 
 	const { type } = params;
-	let babyId, notes, duration, amount, side, photoUrl, height, weightValue, diaperType, feedingType, timestamp;
+	let babyId,
+		notes,
+		duration,
+		amount,
+		side,
+		photoUrl,
+		height,
+		weightValue,
+		diaperType,
+		feedingType,
+		timestamp;
+
+	// Enhanced feeding fields
+	let foodType, foodDetails, consistency, reaction;
+
+	// Enhanced measurement fields
+	let headCircumference, temperature, teethCount, measurementType, measurementLocation;
+
+	// Sleep tracking fields
+	let startTime, endTime, quality, location;
+
+	// Medication tracking fields
+	let medicationName, dosage, unit, reason, administeredAt;
+
+	// Milestone tracking fields
+	let category, title, description, achievedAt;
 
 	// Handle different content types based on log type
 	if (type === 'photo' || type === 'photos') {
@@ -58,7 +93,46 @@ export const POST: RequestHandler = async ({ request, params, locals }) => {
 	} else {
 		// Handle JSON data for other log types
 		const data = await request.json();
-		({ babyId, notes, duration, amount, side, photoUrl, height, weight: weightValue, diaperType, feedingType, timestamp } = data);
+		({
+			babyId,
+			notes,
+			duration,
+			amount,
+			side,
+			photoUrl,
+			height,
+			weight: weightValue,
+			diaperType,
+			feedingType,
+			timestamp,
+			// Enhanced feeding fields
+			foodType,
+			foodDetails,
+			consistency,
+			reaction,
+			// Enhanced measurement fields
+			headCircumference,
+			temperature,
+			teethCount,
+			measurementType,
+			measurementLocation,
+			// Sleep tracking fields
+			startTime,
+			endTime,
+			quality,
+			location,
+			// Medication tracking fields
+			medicationName,
+			dosage,
+			unit,
+			reason,
+			administeredAt,
+			// Milestone tracking fields
+			category,
+			title,
+			description,
+			achievedAt
+		} = data);
 	}
 
 	try {
@@ -87,6 +161,11 @@ export const POST: RequestHandler = async ({ request, params, locals }) => {
 						type: feedingType || 'bottle',
 						duration,
 						amount,
+						// Enhanced feeding fields for solid foods
+						...(foodType ? { foodType } : {}),
+						...(foodDetails ? { foodDetails } : {}),
+						...(consistency ? { consistency } : {}),
+						...(reaction ? { reaction } : {}),
 						notes,
 						...(timestamp ? { timestamp: new Date(timestamp) } : {})
 					})
@@ -159,32 +238,6 @@ export const POST: RequestHandler = async ({ request, params, locals }) => {
 				break;
 			}
 
-			case 'size':
-				[log] = await db
-					.insert(size)
-					.values({
-						babyId,
-						userId: locals.user.id,
-						height,
-						notes,
-						...(timestamp ? { timestamp: new Date(timestamp) } : {})
-					})
-					.returning();
-				break;
-
-			case 'weight':
-				[log] = await db
-					.insert(weight)
-					.values({
-						babyId,
-						userId: locals.user.id,
-						weight: weightValue,
-						notes,
-						...(timestamp ? { timestamp: new Date(timestamp) } : {})
-					})
-					.returning();
-				break;
-
 			case 'measurement':
 				[log] = await db
 					.insert(measurement)
@@ -193,8 +246,71 @@ export const POST: RequestHandler = async ({ request, params, locals }) => {
 						userId: locals.user.id,
 						height,
 						weight: weightValue,
+						// Enhanced measurement fields
+						...(headCircumference ? { headCircumference } : {}),
+						...(temperature ? { temperature } : {}),
+						...(teethCount ? { teethCount } : {}),
+						measurementType: measurementType || 'routine',
+						measurementLocation: measurementLocation || 'home',
 						notes,
 						...(timestamp ? { timestamp: new Date(timestamp) } : {})
+					})
+					.returning();
+				break;
+
+			case 'sleep':
+				[log] = await db
+					.insert(sleep)
+					.values({
+						babyId,
+						userId: locals.user.id,
+						startTime: new Date(startTime),
+						...(endTime ? { endTime: new Date(endTime) } : {}),
+						...(endTime && startTime
+							? {
+									duration: Math.round(
+										(new Date(endTime).getTime() - new Date(startTime).getTime()) / 60000
+									)
+								}
+							: {}),
+						quality,
+						location,
+						notes,
+						createdAt: new Date()
+					})
+					.returning();
+				break;
+
+			case 'medication':
+				[log] = await db
+					.insert(medication)
+					.values({
+						babyId,
+						userId: locals.user.id,
+						name: medicationName,
+						dosage,
+						unit,
+						reason,
+						administeredAt: new Date(administeredAt),
+						notes,
+						createdAt: new Date()
+					})
+					.returning();
+				break;
+
+			case 'milestone':
+				[log] = await db
+					.insert(milestone)
+					.values({
+						babyId,
+						userId: locals.user.id,
+						category,
+						title,
+						description,
+						achievedAt: new Date(achievedAt),
+						notes,
+						...(photoUrl ? { photoUrl } : {}),
+						createdAt: new Date()
 					})
 					.returning();
 				break;

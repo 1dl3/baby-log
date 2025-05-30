@@ -1,9 +1,9 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { page } from '$app/stores';
+  import { page } from '$app/state';
 
-  let type = $page.params.type;
-  let code = $page.params.code;
+  let type = page.params.type;
+  let code = page.params.code;
   let baby: { id: string; name: string } | null = null;
   let loading = true;
   let error = '';
@@ -20,6 +20,33 @@
     photos: [] as File[],
     diaperType: 'both',
     feedingType: 'bottle',
+    // Enhanced feeding fields
+    foodType: '',
+    foodDetails: '',
+    consistency: '',
+    reaction: '',
+    // Enhanced measurement fields
+    headCircumference: 0,
+    temperature: 0,
+    teethCount: 0,
+    measurementType: 'routine',
+    measurementLocation: 'home',
+    // Sleep tracking fields
+    startTime: new Date().toISOString().slice(0, 16),
+    endTime: new Date().toISOString().slice(0, 16),
+    quality: 'good',
+    location: 'crib',
+    // Medication tracking fields
+    medicationName: '',
+    dosage: '',
+    unit: 'ml',
+    reason: '',
+    administeredAt: new Date().toISOString().slice(0, 16),
+    // Milestone tracking fields
+    category: 'motor',
+    title: '',
+    description: '',
+    achievedAt: new Date().toISOString().slice(0, 16),
     timestamp: new Date().toISOString().slice(0, 16) // Format: YYYY-MM-DDThh:mm
   };
 
@@ -214,7 +241,297 @@
         </div>
       {:else}
         <form class="space-y-6" on:submit|preventDefault={handleSubmit}>
-          {#if type === 'diaper'}
+          {#if type === 'sleep'}
+            <div>
+              <label for="startTime" class="block text-sm font-medium text-gray-700">
+                Start Time
+              </label>
+              <div class="mt-1">
+                <input
+                  type="datetime-local"
+                  id="startTime"
+                  name="startTime"
+                  bind:value={formData.startTime}
+                  class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                  required
+                />
+              </div>
+            </div>
+
+            <div>
+              <label for="endTime" class="block text-sm font-medium text-gray-700">
+                End Time
+              </label>
+              <div class="mt-1">
+                <input
+                  type="datetime-local"
+                  id="endTime"
+                  name="endTime"
+                  bind:value={formData.endTime}
+                  class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                />
+              </div>
+              <p class="mt-1 text-sm text-gray-500">Leave empty if sleep is ongoing</p>
+            </div>
+
+            <div>
+              <label for="quality" class="block text-sm font-medium text-gray-700">
+                Sleep Quality
+              </label>
+              <div class="mt-1">
+                <select
+                  id="quality"
+                  name="quality"
+                  bind:value={formData.quality}
+                  class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                >
+                  <option value="good">Good</option>
+                  <option value="fair">Fair</option>
+                  <option value="poor">Poor</option>
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label for="location" class="block text-sm font-medium text-gray-700">
+                Sleep Location
+              </label>
+              <div class="mt-1">
+                <select
+                  id="location"
+                  name="location"
+                  bind:value={formData.location}
+                  class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                >
+                  <option value="crib">Crib</option>
+                  <option value="bed">Bed</option>
+                  <option value="stroller">Stroller</option>
+                  <option value="car-seat">Car Seat</option>
+                  <option value="parents-bed">Parents' Bed</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label for="notes" class="block text-sm font-medium text-gray-700">
+                Notes
+              </label>
+              <div class="mt-1">
+                <textarea
+                  id="notes"
+                  name="notes"
+                  rows="3"
+                  bind:value={formData.notes}
+                  class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                  placeholder="Any additional details about the sleep session"
+                ></textarea>
+              </div>
+            </div>
+          {:else if type === 'medication'}
+            <div>
+              <label for="medicationName" class="block text-sm font-medium text-gray-700">
+                Medication Name
+              </label>
+              <div class="mt-1">
+                <input
+                  type="text"
+                  id="medicationName"
+                  name="medicationName"
+                  bind:value={formData.medicationName}
+                  class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                  required
+                  placeholder="e.g., Paracetamol, Ibuprofen"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label for="dosage" class="block text-sm font-medium text-gray-700">
+                Dosage
+              </label>
+              <div class="mt-1">
+                <input
+                  type="text"
+                  id="dosage"
+                  name="dosage"
+                  bind:value={formData.dosage}
+                  class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                  required
+                  placeholder="e.g., 5, 2.5"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label for="unit" class="block text-sm font-medium text-gray-700">
+                Unit
+              </label>
+              <div class="mt-1">
+                <select
+                  id="unit"
+                  name="unit"
+                  bind:value={formData.unit}
+                  class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                  required
+                >
+                  <option value="ml">ml</option>
+                  <option value="mg">mg</option>
+                  <option value="drops">drops</option>
+                  <option value="tablet">tablet</option>
+                  <option value="teaspoon">teaspoon</option>
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label for="reason" class="block text-sm font-medium text-gray-700">
+                Reason
+              </label>
+              <div class="mt-1">
+                <input
+                  type="text"
+                  id="reason"
+                  name="reason"
+                  bind:value={formData.reason}
+                  class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                  placeholder="e.g., Fever, Cold, Cough"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label for="administeredAt" class="block text-sm font-medium text-gray-700">
+                Administered At
+              </label>
+              <div class="mt-1">
+                <input
+                  type="datetime-local"
+                  id="administeredAt"
+                  name="administeredAt"
+                  bind:value={formData.administeredAt}
+                  class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                  required
+                />
+              </div>
+            </div>
+
+            <div>
+              <label for="notes" class="block text-sm font-medium text-gray-700">
+                Notes
+              </label>
+              <div class="mt-1">
+                <textarea
+                  id="notes"
+                  name="notes"
+                  rows="3"
+                  bind:value={formData.notes}
+                  class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                  placeholder="Any additional details about the medication"
+                ></textarea>
+              </div>
+            </div>
+          {:else if type === 'milestone'}
+            <div>
+              <label for="category" class="block text-sm font-medium text-gray-700">
+                Category
+              </label>
+              <div class="mt-1">
+                <select
+                  id="category"
+                  name="category"
+                  bind:value={formData.category}
+                  class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                  required
+                >
+                  <option value="motor">Motor Skills</option>
+                  <option value="cognitive">Cognitive</option>
+                  <option value="social">Social</option>
+                  <option value="language">Language</option>
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label for="title" class="block text-sm font-medium text-gray-700">
+                Milestone Title
+              </label>
+              <div class="mt-1">
+                <input
+                  type="text"
+                  id="title"
+                  name="title"
+                  bind:value={formData.title}
+                  class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                  required
+                  placeholder="e.g., First smile, Rolls over, First word"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label for="description" class="block text-sm font-medium text-gray-700">
+                Description
+              </label>
+              <div class="mt-1">
+                <textarea
+                  id="description"
+                  name="description"
+                  rows="3"
+                  bind:value={formData.description}
+                  class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                  placeholder="Detailed description of the milestone"
+                ></textarea>
+              </div>
+            </div>
+
+            <div>
+              <label for="achievedAt" class="block text-sm font-medium text-gray-700">
+                Achieved At
+              </label>
+              <div class="mt-1">
+                <input
+                  type="datetime-local"
+                  id="achievedAt"
+                  name="achievedAt"
+                  bind:value={formData.achievedAt}
+                  class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                  required
+                />
+              </div>
+            </div>
+
+            <div>
+              <label for="photo" class="block text-sm font-medium text-gray-700">
+                Photo (Optional)
+              </label>
+              <div class="mt-1">
+                <input
+                  type="file"
+                  id="photo"
+                  name="photo"
+                  accept="image/*"
+                  class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label for="notes" class="block text-sm font-medium text-gray-700">
+                Notes
+              </label>
+              <div class="mt-1">
+                <textarea
+                  id="notes"
+                  name="notes"
+                  rows="3"
+                  bind:value={formData.notes}
+                  class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                  placeholder="Any additional notes about this milestone"
+                ></textarea>
+              </div>
+            </div>
+          {:else if type === 'diaper'}
             <div>
               <label for="diaperType" class="block text-sm font-medium text-gray-700">
                 Diaper Type
@@ -296,6 +613,84 @@
                   required
                   min="0"
                 />
+              </div>
+            </div>
+            {/if}
+
+            {#if formData.feedingType === 'solid'}
+            <div>
+              <label for="foodType" class="block text-sm font-medium text-gray-700">
+                Food Type
+              </label>
+              <div class="mt-1">
+                <select
+                  id="foodType"
+                  name="foodType"
+                  bind:value={formData.foodType}
+                  class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                  required
+                >
+                  <option value="fruit">Fruit</option>
+                  <option value="vegetable">Vegetable</option>
+                  <option value="grain">Grain</option>
+                  <option value="protein">Protein</option>
+                  <option value="dairy">Dairy</option>
+                  <option value="mixed">Mixed</option>
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label for="foodDetails" class="block text-sm font-medium text-gray-700">
+                Food Details
+              </label>
+              <div class="mt-1">
+                <input
+                  type="text"
+                  id="foodDetails"
+                  name="foodDetails"
+                  bind:value={formData.foodDetails}
+                  class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                  placeholder="e.g., Banana, Carrot puree"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label for="consistency" class="block text-sm font-medium text-gray-700">
+                Consistency
+              </label>
+              <div class="mt-1">
+                <select
+                  id="consistency"
+                  name="consistency"
+                  bind:value={formData.consistency}
+                  class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                >
+                  <option value="puree">Puree</option>
+                  <option value="mashed">Mashed</option>
+                  <option value="small-pieces">Small Pieces</option>
+                  <option value="finger-food">Finger Food</option>
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label for="reaction" class="block text-sm font-medium text-gray-700">
+                Baby's Reaction
+              </label>
+              <div class="mt-1">
+                <select
+                  id="reaction"
+                  name="reaction"
+                  bind:value={formData.reaction}
+                  class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                >
+                  <option value="liked">Liked</option>
+                  <option value="neutral">Neutral</option>
+                  <option value="disliked">Disliked</option>
+                  <option value="allergic">Allergic Reaction</option>
+                </select>
               </div>
             </div>
             {/if}
@@ -489,6 +884,9 @@
                   <option value="feeding">Feeding</option>
                   <option value="nursing">Nursing</option>
                   <option value="measurement">Measurement</option>
+                  <option value="sleep">Sleep</option>
+                  <option value="medication">Medication</option>
+                  <option value="milestone">Milestone</option>
                 </select>
               </div>
             </div>
@@ -602,6 +1000,43 @@
             </div>
           {:else if type === 'measurement'}
             <div>
+              <label for="measurementType" class="block text-sm font-medium text-gray-700">
+                Measurement Type
+              </label>
+              <div class="mt-1">
+                <select
+                  id="measurementType"
+                  name="measurementType"
+                  bind:value={formData.measurementType}
+                  class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                  required
+                >
+                  <option value="routine">Routine Check</option>
+                  <option value="sick">Sick Visit</option>
+                  <option value="doctor">Doctor Visit</option>
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label for="measurementLocation" class="block text-sm font-medium text-gray-700">
+                Measurement Location
+              </label>
+              <div class="mt-1">
+                <select
+                  id="measurementLocation"
+                  name="measurementLocation"
+                  bind:value={formData.measurementLocation}
+                  class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                >
+                  <option value="home">Home</option>
+                  <option value="doctor">Doctor's Office</option>
+                  <option value="hospital">Hospital</option>
+                </select>
+              </div>
+            </div>
+
+            <div>
               <label for="height" class="block text-sm font-medium text-gray-700">
                 Height (cm)
               </label>
@@ -612,12 +1047,12 @@
                   name="height"
                   bind:value={formData.height}
                   class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
-                  required
                   min="0"
                   step="0.1"
                 />
               </div>
             </div>
+
             <div>
               <label for="weight" class="block text-sm font-medium text-gray-700">
                 Weight (kg)
@@ -629,12 +1064,64 @@
                   name="weight"
                   bind:value={formData.weight}
                   class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
-                  required
                   min="0"
                   step="0.01"
                 />
               </div>
             </div>
+
+            <div>
+              <label for="headCircumference" class="block text-sm font-medium text-gray-700">
+                Head Circumference (cm)
+              </label>
+              <div class="mt-1">
+                <input
+                  type="number"
+                  id="headCircumference"
+                  name="headCircumference"
+                  bind:value={formData.headCircumference}
+                  class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                  min="0"
+                  step="0.1"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label for="temperature" class="block text-sm font-medium text-gray-700">
+                Temperature (°C)
+              </label>
+              <div class="mt-1">
+                <input
+                  type="number"
+                  id="temperature"
+                  name="temperature"
+                  bind:value={formData.temperature}
+                  class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                  min="35"
+                  max="42"
+                  step="0.1"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label for="teethCount" class="block text-sm font-medium text-gray-700">
+                Teeth Count
+              </label>
+              <div class="mt-1">
+                <input
+                  type="number"
+                  id="teethCount"
+                  name="teethCount"
+                  bind:value={formData.teethCount}
+                  class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                  min="0"
+                  max="20"
+                />
+              </div>
+            </div>
+
             <div>
               <label for="timestamp" class="block text-sm font-medium text-gray-700">
                 Date & Time
@@ -650,6 +1137,7 @@
                 />
               </div>
             </div>
+
             <div>
               <label for="notes" class="block text-sm font-medium text-gray-700">
                 Notes
