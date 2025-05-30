@@ -1,7 +1,7 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { db } from '$lib/server/db';
-import { diaperChange, feeding, nursing, photo, size, weight } from '$lib/server/db/schema';
+import { diaperChange, feeding, nursing, photo, size, weight, measurement, itemPhoto } from '$lib/server/db/schema';
 
 export const POST: RequestHandler = async ({ request, params, locals }) => {
 	if (!locals.user) {
@@ -9,31 +9,56 @@ export const POST: RequestHandler = async ({ request, params, locals }) => {
 	}
 
 	const { type } = params;
-	let babyId, notes, duration, amount, side, photoUrl, height, weightValue;
+	let babyId, notes, duration, amount, side, photoUrl, height, weightValue, diaperType, feedingType, timestamp;
 
 	// Handle different content types based on log type
-	if (type === 'photo') {
+	if (type === 'photo' || type === 'photos') {
 		// Handle multipart form data for photo uploads
 		const formData = await request.formData();
 		babyId = formData.get('babyId') as string;
 		notes = formData.get('notes') as string;
+		const itemId = formData.get('itemId') as string;
+		const itemType = formData.get('itemType') as string;
 
-		// Handle the photo file
-		const photoFile = formData.get('photo') as File;
-		if (!photoFile) {
-			return json({ error: 'No photo provided' }, { status: 400 });
+		// Handle the photo file(s)
+		if (type === 'photo') {
+			// Single photo upload (legacy support)
+			const photoFile = formData.get('photo') as File;
+			if (!photoFile) {
+				return json({ error: 'No photo provided' }, { status: 400 });
+			}
+
+			// In a real implementation, you would upload the file to a storage service
+			// and get back a URL. For this example, we'll just use a placeholder URL.
+			photoUrl = `/uploads/${Date.now()}_${photoFile.name}`;
+
+			// TODO: Implement actual file upload to a storage service
+			console.log(`Photo would be saved to: ${photoUrl}`);
+		} else if (type === 'photos' && itemId && itemType) {
+			// Multiple photos for an existing item
+			const photoFiles = formData.getAll('photos') as File[];
+			if (!photoFiles || photoFiles.length === 0) {
+				return json({ error: 'No photos provided' }, { status: 400 });
+			}
+
+			// Process multiple photos
+			const photoUrls = [];
+			for (const photoFile of photoFiles) {
+				// In a real implementation, you would upload each file to a storage service
+				const url = `/uploads/${Date.now()}_${photoFile.name}`;
+				photoUrls.push(url);
+
+				// TODO: Implement actual file upload to a storage service
+				console.log(`Photo would be saved to: ${url}`);
+			}
+
+			// Store the URLs for later use
+			photoUrl = photoUrls[0]; // For backward compatibility
 		}
-
-		// In a real implementation, you would upload the file to a storage service
-		// and get back a URL. For this example, we'll just use a placeholder URL.
-		photoUrl = `/uploads/${Date.now()}_${photoFile.name}`;
-
-		// TODO: Implement actual file upload to a storage service
-		console.log(`Photo would be saved to: ${photoUrl}`);
 	} else {
 		// Handle JSON data for other log types
 		const data = await request.json();
-		({ babyId, notes, duration, amount, side, photoUrl, height, weight: weightValue } = data);
+		({ babyId, notes, duration, amount, side, photoUrl, height, weight: weightValue, diaperType, feedingType, timestamp } = data);
 	}
 
 	try {
@@ -46,8 +71,9 @@ export const POST: RequestHandler = async ({ request, params, locals }) => {
 					.values({
 						babyId,
 						userId: locals.user.id,
-						type: 'both',
-						notes
+						type: diaperType || 'both',
+						notes,
+						...(timestamp ? { timestamp: new Date(timestamp) } : {})
 					})
 					.returning();
 				break;
@@ -58,10 +84,11 @@ export const POST: RequestHandler = async ({ request, params, locals }) => {
 					.values({
 						userId: locals.user.id,
 						babyId,
-						type: 'bottle',
+						type: feedingType || 'bottle',
 						duration,
 						amount,
-						notes
+						notes,
+						...(timestamp ? { timestamp: new Date(timestamp) } : {})
 					})
 					.returning();
 				break;
@@ -74,22 +101,63 @@ export const POST: RequestHandler = async ({ request, params, locals }) => {
 						userId: locals.user.id,
 						duration,
 						side,
-						notes
+						notes,
+						...(timestamp ? { timestamp: new Date(timestamp) } : {})
 					})
 					.returning();
 				break;
 
 			case 'photo':
+				// Legacy single photo handling
 				[log] = await db
 					.insert(photo)
 					.values({
 						babyId,
 						userId: locals.user.id,
 						photoUrl,
-						notes
+						notes,
+						...(timestamp ? { timestamp: new Date(timestamp) } : {})
 					})
 					.returning();
 				break;
+
+			case 'photos': {
+				// Handle multiple photos for an item
+				const formData = await request.formData();
+				const itemId = formData.get('itemId') as string;
+				const itemType = formData.get('itemType') as string;
+
+				if (!itemId || !itemType) {
+					return json({ error: 'Item ID and type are required' }, { status: 400 });
+				}
+
+				const photoFiles = formData.getAll('photos') as File[];
+				if (!photoFiles || photoFiles.length === 0) {
+					return json({ error: 'No photos provided' }, { status: 400 });
+				}
+
+				// Process and save each photo
+				const savedPhotos = [];
+				for (const photoFile of photoFiles) {
+					// In a real implementation, you would upload the file to a storage service
+					const url = `/uploads/${Date.now()}_${photoFile.name}`;
+
+					// Save the photo in the itemPhoto table
+					const [savedPhoto] = await db
+						.insert(itemPhoto)
+						.values({
+							itemId,
+							itemType,
+							photoUrl: url
+						})
+						.returning();
+
+					savedPhotos.push(savedPhoto);
+				}
+
+				log = { photos: savedPhotos };
+				break;
+			}
 
 			case 'size':
 				[log] = await db
@@ -98,7 +166,8 @@ export const POST: RequestHandler = async ({ request, params, locals }) => {
 						babyId,
 						userId: locals.user.id,
 						height,
-						notes
+						notes,
+						...(timestamp ? { timestamp: new Date(timestamp) } : {})
 					})
 					.returning();
 				break;
@@ -110,7 +179,22 @@ export const POST: RequestHandler = async ({ request, params, locals }) => {
 						babyId,
 						userId: locals.user.id,
 						weight: weightValue,
-						notes
+						notes,
+						...(timestamp ? { timestamp: new Date(timestamp) } : {})
+					})
+					.returning();
+				break;
+
+			case 'measurement':
+				[log] = await db
+					.insert(measurement)
+					.values({
+						babyId,
+						userId: locals.user.id,
+						height,
+						weight: weightValue,
+						notes,
+						...(timestamp ? { timestamp: new Date(timestamp) } : {})
 					})
 					.returning();
 				break;

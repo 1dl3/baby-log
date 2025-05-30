@@ -4,8 +4,6 @@
 
 	export let data;
 
-	// Debug the data received from the server
-	console.log('Layout data received from server:', data);
 </script>
 
 <Layout userData={data.user}>

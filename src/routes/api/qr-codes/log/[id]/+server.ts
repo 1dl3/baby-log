@@ -14,7 +14,10 @@ export const GET: RequestHandler = async ({ params, locals }) => {
 
 	try {
 		const code = await db.query.qrCode.findFirst({
-			where: and(eq(qrCode.code, id), eq(qrCode.userId, locals.user.id))
+			where: and(eq(qrCode.code, id), eq(qrCode.userId, locals.user.id)),
+			with: {
+				babyId: true
+			}
 		});
 
 		if (!code) {

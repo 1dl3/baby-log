@@ -1,8 +1,8 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { db } from '$lib/server/db';
-import { user } from '$lib/server/db/schema';
-import { eq } from 'drizzle-orm';
+import { user, userToken } from '$lib/server/db/schema';
+import { eq, and } from 'drizzle-orm';
 import { sendPasswordResetEmail } from '$lib/server/mail';
 import { generateToken } from '$lib/server/token';
 
@@ -21,12 +21,22 @@ export const POST: RequestHandler = async ({ request }) => {
 
     const resetToken = generateToken();
 
-    await db.update(user)
-      .set({
-        resetToken,
-        resetTokenExpires: new Date(Date.now() + 3600000) // 1 hour from now
-      })
-      .where(eq(user.id, foundUser.id));
+    // Delete any existing reset tokens for this user
+    await db.delete(userToken)
+      .where(
+        and(
+          eq(userToken.userId, foundUser.id),
+          eq(userToken.type, 'reset')
+        )
+      );
+
+    // Create a new reset token
+    await db.insert(userToken).values({
+      userId: foundUser.id,
+      type: 'reset',
+      token: resetToken,
+      expiresAt: new Date(Date.now() + 3600000) // 1 hour from now
+    });
 
     await sendPasswordResetEmail(email, resetToken);
 

@@ -11,7 +11,7 @@ export const load: LayoutServerLoad = async (event) => {
 	const path = event.url.pathname;
 
 	// Public routes that don't require authentication
-	const publicRoutes = ['/login', '/register', '/forgot-password', '/reset-password', '/verify-email'];
+	const publicRoutes = ['/login', '/register', '/forgot-password', '/reset-password', '/verify-email', '/verify-token'];
 
 	// Redirect unauthenticated users to login page
 	if (!event.locals.user && !publicRoutes.some(route => path === route || path.startsWith(route + '/'))) {

@@ -86,12 +86,14 @@
 		await fetchStatistics('diaper');
 		await fetchStatistics('feeding');
 		await fetchStatistics('nursing');
+		console.log(baby, $user)
 		if (baby) {
-			isOwner = baby.userId === user?.id;
+			isOwner = baby.userId === $user?.id;
 			if (isOwner) {
 				await fetchSharedUsers();
 			}
 		}
+		console.log(isOwner);
 		loading = false;
 	});
 

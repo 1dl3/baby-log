@@ -15,12 +15,22 @@
 	onMount(() => {
 		if (userData) {
 			setUser(userData);
+
+			// Redirect unverified users to the verification page
+			if (userData.emailVerified === false && !window.location.pathname.startsWith('/verify-token')) {
+				window.location.href = '/verify-token';
+			}
 		}
 	});
 
 	// Also keep the reactive statement as a backup
 	$: if (userData) {
 		setUser(userData);
+
+		// Redirect unverified users to the verification page
+		// if (userData.emailVerified === false && !window.location.pathname.startsWith('/verify-token') && typeof window !== 'undefined') {
+		// 	window.location.href = '/verify-token';
+		// }
 	}
 
 	let isMenuOpen = false;

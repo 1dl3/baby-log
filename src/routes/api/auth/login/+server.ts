@@ -11,6 +11,7 @@ import {
   findExistingSession, 
   refreshSession 
 } from '$lib/server/session';
+import { checkRateLimit, resetRateLimit } from '$lib/server/rate-limit';
 
 /**
  * Handles user login
@@ -20,8 +21,12 @@ import {
  */
 export const POST: RequestHandler = async (event) => {
   const { request } = event;
+  const clientIp = event.getClientAddress();
 
   try {
+    // Check rate limiting before processing the request
+    await checkRateLimit(clientIp, 'login');
+
     const { email, password } = await request.json();
 
     // Find user
@@ -55,6 +60,9 @@ export const POST: RequestHandler = async (event) => {
 
     // Set session cookie
     setSessionCookie(event, sessionToken);
+
+    // Reset rate limit counter on successful login
+    await resetRateLimit(clientIp, 'login');
 
     return json({
       user: {
