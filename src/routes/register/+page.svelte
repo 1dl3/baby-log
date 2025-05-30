@@ -1,6 +1,6 @@
 <script lang="ts">
   import { enhance } from '$app/forms';
-  
+
   let email = '';
   let password = '';
   let name = '';
@@ -21,7 +21,7 @@
         error = data.error || 'Registrierung fehlgeschlagen';
         return;
       }
-      window.location.href = '/login';
+      window.location.href = '/verify-email?fromRegistration=true';
     } catch (e) {
       error = 'Serverfehler bei der Registrierung';
     }

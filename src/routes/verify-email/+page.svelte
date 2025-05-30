@@ -3,6 +3,8 @@
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
 
+	// Check if coming from registration
+	const fromRegistration = page.url.searchParams.get('fromRegistration') === 'true';
 
 	onMount(() => {
 		// Extract token from URL
@@ -20,6 +22,11 @@
 
 <div class="flex flex-col items-center justify-center min-h-screen bg-gray-100">
 	<div class="w-full max-w-md p-8 space-y-8 bg-white rounded-lg shadow-md text-center">
+		{#if fromRegistration}
+			<div class="mb-4 p-4 bg-green-100 text-green-700 rounded-md">
+				Registrierung erfolgreich! Bitte überprüfe deine E-Mail, um dein Konto zu verifizieren.
+			</div>
+		{/if}
 		<h2 class="text-2xl font-bold text-gray-900">E-Mail Verifizierung</h2>
 		<div class="flex justify-center">
 			<svg class="animate-spin h-10 w-10 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
