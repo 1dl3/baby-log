@@ -2,7 +2,7 @@ import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { db } from '$lib/server/db';
 import { and, eq } from 'drizzle-orm';
-import { qrCode, baby } from '$lib/server/db/schema';
+import { qrCode } from '$lib/server/db/schema';
 
 // Get all QR codes for a specific baby
 export const GET: RequestHandler = async ({ params, locals }) => {

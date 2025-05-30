@@ -326,3 +326,14 @@ export const itemPhotoRelations = relations(itemPhoto, () => ({
 	// This table has polymorphic relations based on itemType
 	// The actual relations will be handled in the application code
 }));
+
+export const qrCodeRelations = relations(qrCode, ({ one }) => ({
+	baby: one(baby, {
+		fields: [qrCode.babyId],
+		references: [baby.id]
+	}),
+	user: one(user, {
+		fields: [qrCode.userId],
+		references: [user.id]
+	})
+}));

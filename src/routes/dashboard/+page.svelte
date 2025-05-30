@@ -20,7 +20,7 @@
 		code: string;
 	}
 
-	export let data: PageData;
+ export const data: PageData = {};
 	let babies: Baby[] = [];
 	let loading = true;
 	let error = '';
