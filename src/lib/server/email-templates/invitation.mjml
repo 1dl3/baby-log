@@ -1,6 +1,6 @@
 <mjml>
   <mj-head>
-    <mj-title>Email Verifizierung</mj-title>
+    <mj-title>Einladung zu Baby Log</mj-title>
     <mj-font name="Roboto" href="https://fonts.googleapis.com/css?family=Roboto" />
     <mj-attributes>
       <mj-all font-family="Roboto, Helvetica, sans-serif" />
@@ -14,19 +14,25 @@
           Willkommen bei Baby Log!
         </mj-text>
         <mj-text color="#666666" font-size="16px" line-height="24px">
-          Sie wurden zum Baby-Log eingeladen. Klicken Sie auf den Link um sich einzuloggen oder einen Account zu erstellen und
+          Sie wurden von {{inviterName}} eingeladen, auf das Baby-Profil von {{babyName}} zuzugreifen.
         </mj-text>
-        <mj-button background-color="#4f46e5" color="white" href="{{verificationUrl}}">
-          E-Mail verifizieren
+        <mj-text color="#666666" font-size="16px" line-height="24px">
+          Klicken Sie auf den Link unten, um sich einzuloggen oder einen Account zu erstellen und das Baby zu Ihrem Profil hinzuzufügen.
+        </mj-text>
+        <mj-button background-color="#4f46e5" color="white" href="{{invitationUrl}}">
+          Einladung annehmen
         </mj-button>
         <mj-text color="#666666" font-size="14px" line-height="20px">
           Oder kopieren Sie diesen Link in Ihren Browser:
         </mj-text>
         <mj-text color="#4f46e5" font-size="14px" line-height="20px">
-          {{verificationUrl}}
+          {{invitationUrl}}
         </mj-text>
         <mj-text color="#666666" font-size="14px" line-height="20px">
-          Der Link ist 24 Stunden gültig.
+          Ihr Einladungscode: <strong>{{invitationCode}}</strong>
+        </mj-text>
+        <mj-text color="#666666" font-size="14px" line-height="20px">
+          Der Link und Code sind 24 Stunden gültig.
         </mj-text>
       </mj-column>
     </mj-section>

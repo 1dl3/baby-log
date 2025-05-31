@@ -55,7 +55,10 @@ export const baby = pgTable('baby', {
 	photoUrl: text('photo_url'),
 	createdAt: timestamp('created_at').notNull().defaultNow(),
 	shareCode: text('share_code').unique(),
-	shareCodeExpires: timestamp('share_code_expires')
+	shareCodeExpires: timestamp('share_code_expires'),
+	invitationCode: text('invitation_code').unique(),
+	invitationCodeExpires: timestamp('invitation_code_expires'),
+	invitationEmail: text('invitation_email')
 });
 
 export const sharedBaby = pgTable('shared_baby', {
@@ -240,7 +243,8 @@ export const userRelations = relations(user, ({ many }) => ({
 	tokens: many(userToken),
 	sleepRecords: many(sleep),
 	medications: many(medication),
-	milestones: many(milestone)
+	milestones: many(milestone),
+	notifications: many(notification)
 }));
 
 export const userTokenRelations = relations(userToken, ({ one }) => ({
@@ -322,6 +326,19 @@ export const milestoneRelations = relations(milestone, ({ one }) => ({
 	})
 }));
 
+// Notification table for in-app notifications
+export const notification = pgTable('notification', {
+	id: uuid('id').primaryKey().defaultRandom(),
+	userId: uuid('user_id')
+		.notNull()
+		.references(() => user.id, { onDelete: 'cascade' }),
+	type: text('type').notNull(), // BABY_INVITATION, SYSTEM, etc.
+	message: text('message').notNull(),
+	data: text('data'), // JSON string with additional data
+	read: boolean('read').notNull().default(false),
+	createdAt: timestamp('created_at').notNull().defaultNow()
+});
+
 export const itemPhotoRelations = relations(itemPhoto, () => ({
 	// This table has polymorphic relations based on itemType
 	// The actual relations will be handled in the application code
@@ -334,6 +351,13 @@ export const qrCodeRelations = relations(qrCode, ({ one }) => ({
 	}),
 	user: one(user, {
 		fields: [qrCode.userId],
+		references: [user.id]
+	})
+}));
+
+export const notificationRelations = relations(notification, ({ one }) => ({
+	user: one(user, {
+		fields: [notification.userId],
 		references: [user.id]
 	})
 }));

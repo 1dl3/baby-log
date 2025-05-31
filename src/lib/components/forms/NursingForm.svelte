@@ -23,6 +23,10 @@
   function handleCancel() {
     dispatch('cancel');
   }
+
+  function setSide(side: string) {
+    formData.side = side;
+  }
 </script>
 
 <BaseForm {baby} type="nursing" {error} {success} {formData} on:submit={handleSubmit} on:cancel={handleCancel}>
@@ -42,26 +46,55 @@
       />
     </div>
   </div>
-  
+
   <div>
-    <label for="side" class="block text-sm font-medium text-gray-700">
+    <label class="block text-sm font-medium text-gray-700 mb-1">
       Side
     </label>
-    <div class="mt-1">
-      <select
-        id="side"
-        name="side"
-        bind:value={formData.side}
-        class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
-        required
+    <div class="flex space-x-2">
+      <button
+        type="button"
+        on:click={() => setSide('left')}
+        class={`flex-1 py-3 px-4 border rounded-md text-sm font-medium flex items-center justify-center
+               ${formData.side === 'left'
+                 ? 'bg-indigo-100 border-indigo-500 text-indigo-700'
+                 : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'}`}
       >
-        <option value="left">Left</option>
-        <option value="right">Right</option>
-        <option value="both">Both</option>
-      </select>
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+        </svg>
+        Left
+      </button>
+      <button
+        type="button"
+        on:click={() => setSide('right')}
+        class={`flex-1 py-3 px-4 border rounded-md text-sm font-medium flex items-center justify-center
+               ${formData.side === 'right'
+                 ? 'bg-indigo-100 border-indigo-500 text-indigo-700'
+                 : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'}`}
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+        </svg>
+        Right
+      </button>
+      <button
+        type="button"
+        on:click={() => setSide('both')}
+        class={`flex-1 py-3 px-4 border rounded-md text-sm font-medium flex items-center justify-center
+               ${formData.side === 'both'
+                 ? 'bg-indigo-100 border-indigo-500 text-indigo-700'
+                 : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'}`}
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+        </svg>
+        Both
+      </button>
     </div>
+    <input type="hidden" name="side" bind:value={formData.side} required />
   </div>
-  
+
   <div>
     <label for="timestamp" class="block text-sm font-medium text-gray-700">
       Date & Time

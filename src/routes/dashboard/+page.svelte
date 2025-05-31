@@ -6,6 +6,7 @@
  import { flip } from 'svelte/animate';
  import AddBabyModal from '$lib/components/AddBabyModal.svelte';
  import AddEntryModal from '$lib/components/AddEntryModal.svelte';
+ import { calculateAge } from '$lib/utils';
 
 	// Define types for our data
 	interface Baby {
@@ -323,21 +324,6 @@
 		return new Date(dateString).toLocaleDateString('de-DE', options);
 	}
 
-	// Calculate age in months or days
-	function calculateAge(birthDate) {
-		const birth = new Date(birthDate);
-		const now = new Date();
-
-		const diffTime = Math.abs(now - birth);
-		const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-
-		if (diffDays < 30) {
-			return `${diffDays} Tage alt`;
-		} else {
-			const months = Math.floor(diffDays / 30);
-			return `${months} ${months === 1 ? 'Monat' : 'Monate'} alt`;
-		}
-	}
 
 	// Function to fetch log entries for the selected baby
 	async function fetchLogEntries() {

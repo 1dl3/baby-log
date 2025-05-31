@@ -29,8 +29,6 @@
     feeding: { name: 'Fütterung', icon: '🍼' },
     nursing: { name: 'Stillen', icon: '👩‍🍼' },
     photo: { name: 'Foto', icon: '📷' },
-    size: { name: 'Größe', icon: '📏' },
-    weight: { name: 'Gewicht', icon: '⚖️' },
     measurement: { name: 'Messung', icon: '📊' },
     sleep: { name: 'Schlaf', icon: '😴' },
     medication: { name: 'Medikament', icon: '💊' },

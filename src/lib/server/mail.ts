@@ -50,4 +50,27 @@ export async function sendPasswordResetEmail(email: string, token: string) {
     console.error('Error sending password reset email:', error);
     throw new Error('Failed to send password reset email');
   }
+}
+
+export async function sendInvitationEmail(email: string, inviterName: string, babyName: string, invitationCode: string) {
+  const invitationUrl = `${env.APP_URL}/invitation?code=${invitationCode}`;
+
+  const mailOptions = {
+    from: env.SMTP_FROM || '"Baby Protocol" <noreply@babyprotocol.com>',
+    to: email,
+    subject: `Einladung zu Baby Log - ${babyName}`,
+    html: compileTemplate('invitation', { 
+      inviterName, 
+      babyName, 
+      invitationUrl, 
+      invitationCode 
+    })
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+  } catch (error) {
+    console.error('Error sending invitation email:', error);
+    throw new Error('Failed to send invitation email');
+  }
 } 

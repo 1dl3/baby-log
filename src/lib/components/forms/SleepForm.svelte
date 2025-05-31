@@ -25,6 +25,10 @@
   function handleCancel() {
     dispatch('cancel');
   }
+
+  function setQuality(quality: string) {
+    formData.quality = quality;
+  }
 </script>
 
 <BaseForm {baby} type="sleep" {error} {success} {formData} on:submit={handleSubmit} on:cancel={handleCancel}>
@@ -61,21 +65,51 @@
   </div>
 
   <div>
-    <label for="quality" class="block text-sm font-medium text-gray-700">
+    <label class="block text-sm font-medium text-gray-700 mb-1">
       Sleep Quality
     </label>
-    <div class="mt-1">
-      <select
-        id="quality"
-        name="quality"
-        bind:value={formData.quality}
-        class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+    <div class="flex space-x-2">
+      <button
+        type="button"
+        on:click={() => setQuality('good')}
+        class={`flex-1 py-3 px-4 border rounded-md text-sm font-medium flex items-center justify-center
+               ${formData.quality === 'good'
+                 ? 'bg-indigo-100 border-indigo-500 text-indigo-700'
+                 : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'}`}
       >
-        <option value="good">Good</option>
-        <option value="fair">Fair</option>
-        <option value="poor">Poor</option>
-      </select>
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        Good
+      </button>
+      <button
+        type="button"
+        on:click={() => setQuality('fair')}
+        class={`flex-1 py-3 px-4 border rounded-md text-sm font-medium flex items-center justify-center
+               ${formData.quality === 'fair'
+                 ? 'bg-indigo-100 border-indigo-500 text-indigo-700'
+                 : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'}`}
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        Fair
+      </button>
+      <button
+        type="button"
+        on:click={() => setQuality('poor')}
+        class={`flex-1 py-3 px-4 border rounded-md text-sm font-medium flex items-center justify-center
+               ${formData.quality === 'poor'
+                 ? 'bg-indigo-100 border-indigo-500 text-indigo-700'
+                 : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'}`}
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        Poor
+      </button>
     </div>
+    <input type="hidden" name="quality" bind:value={formData.quality} />
   </div>
 
   <div>

@@ -6,6 +6,7 @@
  import { user } from '$lib/stores/user';
  import AddBabyModal from '$lib/components/AddBabyModal.svelte';
  import ConfirmDialog from '$lib/components/ConfirmDialog.svelte';
+ import { calculateAge } from '$lib/utils';
 
 	// Define types for our data
 	interface Baby {
@@ -181,21 +182,7 @@
 		return new Date(dateString).toLocaleDateString('de-DE', options);
 	}
 
-	// Calculate age in months or days
-	function calculateAge(birthDate: string) {
-		const birth = new Date(birthDate);
-		const now = new Date();
 
-		const diffTime = Math.abs(now.getTime() - birth.getTime());
-		const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-
-		if (diffDays < 30) {
-			return `${diffDays} Tage alt`;
-		} else {
-			const months = Math.floor(diffDays / 30);
-			return `${months} ${months === 1 ? 'Monat' : 'Monate'} alt`;
-		}
-	}
 </script>
 
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">

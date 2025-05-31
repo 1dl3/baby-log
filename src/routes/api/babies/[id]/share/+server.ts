@@ -1,12 +1,13 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { db } from '$lib/server/db';
-import { baby, sharedBaby, user } from '$lib/server/db/schema';
-import { eq,gte, and } from 'drizzle-orm';
+import { baby, sharedBaby, user, notification } from '$lib/server/db/schema';
+import { eq, gte, and } from 'drizzle-orm';
 import { generateToken } from '$lib/server/token';
 import { error } from '@sveltejs/kit';
 import QRCode from 'qrcode';
 import { env } from '$env/dynamic/private';
+import { sendInvitationEmail } from '$lib/server/mail';
 
 export const POST: RequestHandler = async ({ params, locals }) => {
   const { id } = params;
@@ -75,43 +76,79 @@ export const PATCH: RequestHandler = async ({ request, params, locals }) => {
       throw error(404, 'Baby nicht gefunden');
     }
 
+    // Get inviter's name
+    const inviter = await db.query.user.findFirst({
+      where: eq(user.id, userId)
+    });
+
+    if (!inviter) {
+      throw error(500, 'Fehler beim Abrufen des Benutzernamens');
+    }
+
+    // Generate invitation code
+    const invitationCode = generateToken();
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+
+    // Update baby with invitation code
+    await db.update(baby)
+      .set({
+        invitationCode,
+        invitationCodeExpires: expiresAt,
+        invitationEmail: email
+      })
+      .where(eq(baby.id, id));
+
     // Find the user by email
     const invitedUser = await db.query.user.findFirst({
       where: eq(user.email, email)
     });
 
-    if (!invitedUser) {
-      throw error(404, 'Benutzer nicht gefunden');
-    }
+    if (invitedUser) {
+      // User exists - create notification and share
+      await db.insert(notification).values({
+        userId: invitedUser.id,
+        type: 'BABY_INVITATION',
+        message: `${inviter.name || 'Ein Benutzer'} hat Sie eingeladen, auf das Baby-Profil von ${foundBaby.name} zuzugreifen.`,
+        data: JSON.stringify({
+          babyId: id,
+          babyName: foundBaby.name,
+          inviterId: userId,
+          inviterName: inviter.name,
+          canEdit,
+          invitationCode
+        }),
+        read: false,
+        createdAt: new Date()
+      });
 
-    // Check if already shared
-    const existingShare = await db.query.sharedBaby.findFirst({
-      where: and(
-        eq(sharedBaby.babyId, id),
-        eq(sharedBaby.userId, invitedUser.id)
-      )
-    });
-
-    if (existingShare) {
-      // Update permissions if already shared
-      await db.update(sharedBaby)
-        .set({ canEdit })
-        .where(and(
+      // Check if already shared
+      const existingShare = await db.query.sharedBaby.findFirst({
+        where: and(
           eq(sharedBaby.babyId, id),
           eq(sharedBaby.userId, invitedUser.id)
-        ));
+        )
+      });
 
-      return json({ message: 'Berechtigungen aktualisiert' });
+      if (existingShare) {
+        // Update permissions if already shared
+        await db.update(sharedBaby)
+          .set({ canEdit })
+          .where(and(
+            eq(sharedBaby.babyId, id),
+            eq(sharedBaby.userId, invitedUser.id)
+          ));
+      }
     }
 
-    // Create share
-    await db.insert(sharedBaby).values({
-      babyId: id,
-      userId: invitedUser.id,
-      canEdit
-    });
+    // Send invitation email regardless of whether user exists
+    await sendInvitationEmail(
+      email,
+      inviter.name || 'Ein Benutzer von Baby Log',
+      foundBaby.name,
+      invitationCode
+    );
 
-    return json({ message: 'Benutzer erfolgreich eingeladen' });
+    return json({ message: 'Einladung erfolgreich gesendet' });
   } catch (err) {
     console.error('User invitation error:', err);
     throw error(500, 'Interner Serverfehler');
