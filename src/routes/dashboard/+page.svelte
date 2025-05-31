@@ -5,6 +5,7 @@
  import { fade, fly } from 'svelte/transition';
  import { flip } from 'svelte/animate';
  import AddBabyModal from '$lib/components/AddBabyModal.svelte';
+ import AddEntryModal from '$lib/components/AddEntryModal.svelte';
 
 	// Define types for our data
 	interface Baby {
@@ -43,9 +44,11 @@
 	let selectedQrType = 'diaper';
 	let addingBaby = false;
 	let showQrModal = false;
+	let showAddEntryModal = false;
 	let generatingQR = false;
 	let successMessage = '';
 	let showSuccessMessage = false;
+	let addingEntry = false;
 
 	// Log entries state
 	let logEntries: LogEntry[] = [];
@@ -259,6 +262,58 @@
 			error = 'Fehler beim Generieren des QR-Codes';
 		} finally {
 			generatingQR = false;
+		}
+	}
+
+	async function handleAddEntry(event) {
+		if (addingEntry || !selectedBaby) return;
+
+		addingEntry = true;
+		error = '';
+
+		try {
+			const { formData, type, isFormData } = event.detail;
+			const endpoint = `/api/baby-log/${type}`;
+			let response;
+
+			if (isFormData) {
+				// Handle FormData submissions (photos)
+				response = await fetch(endpoint, {
+					method: 'POST',
+					body: formData
+				});
+			} else {
+				// Handle JSON submissions
+				response = await fetch(endpoint, {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json'
+					},
+					body: JSON.stringify({
+						babyId: selectedBaby.id,
+						...formData
+					})
+				});
+			}
+
+			if (!response.ok) throw new Error('Failed to add entry');
+
+			// Show success message
+			successMessage = 'Eintrag erfolgreich hinzugefügt!';
+			showSuccessMessage = true;
+			setTimeout(() => {
+				showSuccessMessage = false;
+			}, 3000);
+
+			// Refresh log entries
+			fetchLogEntries();
+
+			// Close modal
+			showAddEntryModal = false;
+		} catch {
+			error = 'Fehler beim Hinzufügen des Eintrags';
+		} finally {
+			addingEntry = false;
 		}
 	}
 
@@ -479,8 +534,30 @@
 
 	{#if selectedBaby}
 		<div class="mt-6">
-			<div class="border-b border-gray-200 pb-5 mb-6">
+			<div class="border-b border-gray-200 pb-5 mb-6 flex justify-between items-center">
 				<h3 class="text-xl font-bold leading-tight text-gray-900">Protokolleinträge für {selectedBaby.name}</h3>
+
+				<div class="flex space-x-2">
+					<button
+						on:click={() => showAddEntryModal = true}
+						class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+					>
+						<svg class="-ml-1 mr-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+							<path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd" />
+						</svg>
+						Neuen Eintrag erstellen
+					</button>
+
+					<button
+						on:click={() => showQrModal = true}
+						class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+					>
+						<svg class="-ml-1 mr-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+							<path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd" />
+						</svg>
+						QR-Code generieren
+					</button>
+				</div>
 			</div>
 
 			<!-- Log type filter -->
@@ -833,6 +910,18 @@
 	on:addBaby={handleAddBaby}
 	on:addBabyByShareCode={handleAddBabyByShareCode}
 	on:close={() => showAddBabyModal = false}
+/>
+
+<!-- Add Entry Modal -->
+<AddEntryModal
+	showModal={showAddEntryModal}
+	baby={selectedBaby}
+	error={error}
+	success={false}
+	on:submit={handleAddEntry}
+	on:cancel={() => showAddEntryModal = false}
+	on:close={() => showAddEntryModal = false}
+	on:error={(e) => error = e.detail}
 />
 
 <!-- QR Code Modal -->

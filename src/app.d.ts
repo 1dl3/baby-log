@@ -8,8 +8,10 @@ declare global {
 				id: string;
 				email: string;
 				name: string;
+				emailVerified: boolean;
 			};
 		}
+
 		// interface PageData {}
 		// interface PageState {}
 		// interface Platform {}

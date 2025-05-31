@@ -36,5 +36,19 @@ export const handle: Handle = async ({ event, resolve }) => {
     }
   }
 
+  // Check if the request is for an API route (except auth routes)
+  const isApiRoute = event.url.pathname.startsWith('/api/');
+  const isAuthRoute = event.url.pathname.startsWith('/api/auth/');
+
+  // Only allow authenticated users to access API routes (except auth routes)
+  if (isApiRoute && !isAuthRoute && !event.locals.user) {
+    return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+      status: 401,
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+  }
+
   return resolve(event);
 };

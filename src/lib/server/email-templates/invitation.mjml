@@ -1,0 +1,34 @@
+<mjml>
+  <mj-head>
+    <mj-title>Email Verifizierung</mj-title>
+    <mj-font name="Roboto" href="https://fonts.googleapis.com/css?family=Roboto" />
+    <mj-attributes>
+      <mj-all font-family="Roboto, Helvetica, sans-serif" />
+    </mj-attributes>
+  </mj-head>
+  <mj-body background-color="#f4f4f4">
+    <mj-section background-color="#ffffff" padding="20px 0">
+      <mj-column>
+        <mj-image width="100px" src="https://via.placeholder.com/100" alt="Logo" />
+        <mj-text font-size="20px" color="#333333" font-weight="bold" align="center">
+          Willkommen bei Baby Log!
+        </mj-text>
+        <mj-text color="#666666" font-size="16px" line-height="24px">
+          Sie wurden zum Baby-Log eingeladen. Klicken Sie auf den Link um sich einzuloggen oder einen Account zu erstellen und
+        </mj-text>
+        <mj-button background-color="#4f46e5" color="white" href="{{verificationUrl}}">
+          E-Mail verifizieren
+        </mj-button>
+        <mj-text color="#666666" font-size="14px" line-height="20px">
+          Oder kopieren Sie diesen Link in Ihren Browser:
+        </mj-text>
+        <mj-text color="#4f46e5" font-size="14px" line-height="20px">
+          {{verificationUrl}}
+        </mj-text>
+        <mj-text color="#666666" font-size="14px" line-height="20px">
+          Der Link ist 24 Stunden gültig.
+        </mj-text>
+      </mj-column>
+    </mj-section>
+  </mj-body>
+</mjml> 
