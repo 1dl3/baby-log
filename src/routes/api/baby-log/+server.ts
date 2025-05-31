@@ -51,7 +51,7 @@ export const GET: RequestHandler = async ({ url, locals }) => {
           ...(start ? [gte(diaperChange.timestamp, start)] : []),
           ...(end ? [lte(diaperChange.timestamp, end)] : [])
         ),
-        orderBy: (diaperLog, { desc }) => [desc(diaperLog.timestamp)]
+        orderBy: (diaperChange, { desc }) => [desc(diaperChange.timestamp)]
       });
 
       // Fetch feedings
@@ -61,7 +61,7 @@ export const GET: RequestHandler = async ({ url, locals }) => {
           ...(start ? [gte(feeding.timestamp, start)] : []),
           ...(end ? [lte(feeding.timestamp, end)] : [])
         ),
-        orderBy: (feedingLog, { desc }) => [desc(feedingLog.timestamp)]
+        orderBy: (feeding, { desc }) => [desc(feeding.timestamp)]
       });
 
       // Fetch nursing sessions
@@ -71,7 +71,7 @@ export const GET: RequestHandler = async ({ url, locals }) => {
           ...(start ? [gte(nursing.timestamp, start)] : []),
           ...(end ? [lte(nursing.timestamp, end)] : [])
         ),
-        orderBy: (nursingLog, { desc }) => [desc(nursingLog.timestamp)]
+        orderBy: (nursing, { desc }) => [desc(nursing.timestamp)]
       });
 
       // Fetch sleep sessions
@@ -165,7 +165,7 @@ export const GET: RequestHandler = async ({ url, locals }) => {
             ...(start ? [gte(diaperChange.timestamp, start)] : []),
             ...(end ? [lte(diaperChange.timestamp, end)] : [])
           ),
-          orderBy: (diaperLog, { desc }) => [desc(diaperLog.timestamp)],
+          orderBy: (diaperChange, { desc }) => [desc(diaperChange.timestamp)],
           limit,
           offset
         });
@@ -186,7 +186,7 @@ export const GET: RequestHandler = async ({ url, locals }) => {
             ...(start ? [gte(feeding.timestamp, start)] : []),
             ...(end ? [lte(feeding.timestamp, end)] : [])
           ),
-          orderBy: (feedingLog, { desc }) => [desc(feedingLog.timestamp)],
+          orderBy: (feeding, { desc }) => [desc(feeding.timestamp)],
           limit,
           offset
         });
@@ -207,7 +207,7 @@ export const GET: RequestHandler = async ({ url, locals }) => {
             ...(start ? [gte(nursing.timestamp, start)] : []),
             ...(end ? [lte(nursing.timestamp, end)] : [])
           ),
-          orderBy: (nursingLog, { desc }) => [desc(nursingLog.timestamp)],
+          orderBy: (nursing, { desc }) => [desc(nursing.timestamp)],
           limit,
           offset
         });
