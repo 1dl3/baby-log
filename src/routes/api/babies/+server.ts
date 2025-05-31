@@ -26,7 +26,13 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 		return json({ error: 'Unauthorized' }, { status: 401 });
 	}
 
-	const { name, birthDate, gender } = await request.json();
+	const formData = await request.formData();
+	console.log('FormData received:', Object.fromEntries(formData));
+
+	const name = formData.get('name') as string;
+	const birthDate = formData.get('birthDate') as string;
+	const gender = formData.get('gender') as string;
+	const photo = formData.get('photo') as File | null;
 
 	try {
 		const [newBaby] = await db.insert(baby).values({
@@ -35,6 +41,18 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 			birthDate: new Date(birthDate),
 			gender
 		}).returning();
+
+		// Handle photo upload if provided
+		if (photo) {
+			// Here you would add code to save the photo file
+			// and associate it with the baby record
+			console.log('Photo received:', photo.name, photo.type, photo.size);
+
+			// Example: You might want to save the photo to a storage service
+			// and update the baby record with the photo URL
+			// const photoUrl = await uploadPhotoToStorage(photo);
+			// await db.update(baby).set({ photoUrl }).where(eq(baby.id, newBaby.id));
+		}
 
 		return json(newBaby, { status: 201 });
 	} catch (error) {

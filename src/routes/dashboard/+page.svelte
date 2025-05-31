@@ -1,28 +1,30 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
-	import { goto } from '$app/navigation';
-	import type { PageData } from './$types';
-	import { fade, fly } from 'svelte/transition';
-	import { flip } from 'svelte/animate';
+ import { onMount } from 'svelte';
+ import { goto } from '$app/navigation';
+ import type { PageData } from './$types';
+ import { fade, fly } from 'svelte/transition';
+ import { flip } from 'svelte/animate';
+ import AddBabyModal from '$lib/components/AddBabyModal.svelte';
 
- // Define types for our data
- interface Baby {
- 	id: number;
- 	name: string;
- 	birthDate: string;
- 	gender: 'male' | 'female' | 'diverse';
- 	isShared?: boolean;
- 	canEdit?: boolean;
- }
+	// Define types for our data
+	interface Baby {
+		id: number;
+		name: string;
+		birthDate: string;
+		gender: 'male' | 'female' | 'diverse';
+		isShared?: boolean;
+		canEdit?: boolean;
+	}
 
- interface LogEntry {
- 	id: string;
- 	babyId: string;
- 	userId: string;
- 	timestamp: string;
- 	logType: string;
- 	[key: string]: any; // For additional properties based on log type
- }
+	interface LogEntry {
+		id: string;
+		babyId: string;
+		userId: string;
+		timestamp: string;
+		logType: string;
+
+		[key: string]: any; // For additional properties based on log type
+	}
 
 	interface QRCode {
 		id: number;
@@ -31,17 +33,12 @@
 		code: string;
 	}
 
- export const data: PageData = {};
+	export const data: PageData = {};
 	let babies: Baby[] = [];
 	let loading = true;
 	let error = '';
 	let selectedBaby: Baby | null = null;
 	let showAddBabyModal = false;
-	let newBabyName = '';
-	let newBabyBirthDate = '';
-	let newBabyGender: 'male' | 'female' | 'diverse' = 'male';
-	let addBabyMode: 'create' | 'share' = 'create';
-	let shareLink = '';
 	let qrCodes: QRCode[] = [];
 	let selectedQrType = 'diaper';
 	let addingBaby = false;
@@ -109,6 +106,10 @@
 
 			// Combine owned and shared babies
 			babies = [...ownedBabies, ...sharedBabies];
+			if (babies.length > 0) {
+				selectedBaby = babies[0];
+				fetchLogEntries()
+			}
 		} catch {
 			error = 'Fehler beim Laden der Babydaten';
 		} finally {
@@ -116,21 +117,18 @@
 		}
 	});
 
-	async function handleAddBaby() {
+	async function handleAddBaby(event: CustomEvent) {
 		if (addingBaby) return;
 
 		addingBaby = true;
 		error = '';
 
 		try {
+			const { formData } = event.detail;
+
 			const res = await fetch('/api/babies', {
 				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({
-					name: newBabyName,
-					birthDate: newBabyBirthDate,
-					gender: newBabyGender
-				})
+				body: formData
 			});
 
 			if (!res.ok) throw new Error('Failed to add baby');
@@ -138,9 +136,6 @@
 			const newBaby = await res.json();
 			babies = [...babies, newBaby];
 			showAddBabyModal = false;
-			newBabyName = '';
-			newBabyBirthDate = '';
-			newBabyGender = 'male';
 
 			// Select the newly added baby
 			selectBaby(newBaby);
@@ -160,21 +155,14 @@
 	}
 
 
-	async function handleAddBabyByShareCode() {
+	async function handleAddBabyByShareCode(event: CustomEvent) {
 		if (addingBaby) return;
 
 		addingBaby = true;
 		error = '';
 
 		try {
-			// Extract the share code from the input
-			let shareCode = shareLink.trim();
-
-			// If it's a URL, extract the code from it
-			if (shareCode.includes('/')) {
-				const parts = shareCode.split('/');
-				shareCode = parts[parts.length - 1];
-			}
+			const { shareCode } = event.detail;
 
 			// Make API request to add the baby using the share code
 			const res = await fetch('/api/babies/share', {
@@ -212,10 +200,8 @@
 			// Combine owned and shared babies
 			babies = [...ownedBabies, ...sharedBabies];
 
-			// Close modal and reset form
+			// Close modal
 			showAddBabyModal = false;
-			shareLink = '';
-			addBabyMode = 'create';
 
 			// Find and select the newly added baby (the last one added)
 			// This is a simplification - in a real app, you might want to identify the specific baby that was added
@@ -344,27 +330,6 @@
 
 <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 	<!-- Page header -->
-	<div class="md:flex md:items-center md:justify-between mb-8">
-		<div class="flex-1 min-w-0">
-			<h1 class="text-3xl font-bold leading-tight text-gray-900 sm:text-4xl">Dashboard</h1>
-			<p class="mt-1 text-sm text-gray-500">Verwalte deine Babys und generiere QR-Codes für schnelles
-				Protokollieren.</p>
-		</div>
-		<div class="mt-4 flex md:mt-0 md:ml-4">
-			<button
-				on:click={() => (showAddBabyModal = true)}
-				class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-			>
-				<svg class="-ml-1 mr-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"
-						 aria-hidden="true">
-					<path fill-rule="evenodd"
-								d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z"
-								clip-rule="evenodd" />
-				</svg>
-				Neues Baby hinzufügen
-			</button>
-		</div>
-	</div>
 
 	<!-- Success message -->
 	{#if showSuccessMessage}
@@ -461,12 +426,14 @@
 							<div class="flex items-center">
 								<h3 class="text-lg font-medium leading-6 text-gray-900">{baby.name}</h3>
 								{#if baby.isShared}
-									<span class="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+									<span
+										class="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
 										Geteilt
 									</span>
 								{/if}
 								{#if selectedBaby?.id === baby.id}
-									<span class="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+									<span
+										class="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
 										Ausgewählt
 									</span>
 								{/if}
@@ -541,7 +508,8 @@
 				<div class="mb-6 bg-red-50 border-l-4 border-red-400 p-4 rounded shadow-sm">
 					<div class="flex">
 						<div class="flex-shrink-0">
-							<svg class="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+							<svg class="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"
+									 fill="currentColor">
 								<path fill-rule="evenodd"
 											d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
 											clip-rule="evenodd" />
@@ -560,7 +528,7 @@
 					<div class="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
 					<p class="mt-2 text-sm text-gray-500">Lade Protokolleinträge...</p>
 				</div>
-			<!-- Empty state -->
+				<!-- Empty state -->
 			{:else if logEntries.length === 0}
 				<div class="bg-white shadow overflow-hidden sm:rounded-lg">
 					<div class="px-4 py-12 sm:px-6 text-center">
@@ -579,7 +547,7 @@
 						</p>
 					</div>
 				</div>
-			<!-- Log entries list -->
+				<!-- Log entries list -->
 			{:else}
 				<div class="bg-white shadow overflow-hidden sm:rounded-lg divide-y divide-gray-200">
 					{#each logEntries as entry (entry.id)}
@@ -655,7 +623,8 @@
 												</p>
 											{:else if entry.logType === 'nursing'}
 												<p class="text-sm text-gray-500">
-													Dauer: {entry.duration} Minuten · Seite: {entry.side === 'left' ? 'Links' : entry.side === 'right' ? 'Rechts' : 'Beide'}
+													Dauer: {entry.duration} Minuten ·
+													Seite: {entry.side === 'left' ? 'Links' : entry.side === 'right' ? 'Rechts' : 'Beide'}
 													{#if entry.notes}
 														· Notizen: {entry.notes}
 													{/if}
@@ -665,8 +634,14 @@
 													{#if entry.duration}
 														Dauer: {entry.duration} Minuten
 													{:else if entry.startTime && entry.endTime}
-														Von: {new Date(entry.startTime).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}
-														Bis: {new Date(entry.endTime).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}
+														Von: {new Date(entry.startTime).toLocaleTimeString('de-DE', {
+														hour: '2-digit',
+														minute: '2-digit'
+													})}
+														Bis: {new Date(entry.endTime).toLocaleTimeString('de-DE', {
+														hour: '2-digit',
+														minute: '2-digit'
+													})}
 													{/if}
 													{#if entry.quality}
 														· Qualität: {entry.quality}
@@ -698,11 +673,11 @@
 														Größe: {entry.height} cm
 													{/if}
 													{#if entry.weight}
-														{#if entry.height} · {/if}
+														{#if entry.height} ·{/if}
 														Gewicht: {entry.weight} kg
 													{/if}
 													{#if entry.headCircumference}
-														{#if entry.height || entry.weight} · {/if}
+														{#if entry.height || entry.weight} ·{/if}
 														Kopfumfang: {entry.headCircumference} cm
 													{/if}
 													{#if entry.notes}
@@ -723,9 +698,9 @@
 								</div>
 								<div class="text-right">
 									<p class="text-sm text-gray-500">
-										{new Date(entry.timestamp).toLocaleDateString('de-DE', { 
-											year: 'numeric', 
-											month: 'long', 
+										{new Date(entry.timestamp).toLocaleDateString('de-DE', {
+											year: 'numeric',
+											month: 'long',
 											day: 'numeric',
 											hour: '2-digit',
 											minute: '2-digit'
@@ -771,8 +746,12 @@
 									>
 										<span class="sr-only">Erste Seite</span>
 										<svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-											<path fill-rule="evenodd" d="M15.707 15.707a1 1 0 01-1.414 0l-5-5a1 1 0 010-1.414l5-5a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd" />
-											<path fill-rule="evenodd" d="M7.707 15.707a1 1 0 01-1.414 0l-5-5a1 1 0 010-1.414l5-5a1 1 0 111.414 1.414L3.414 10l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd" />
+											<path fill-rule="evenodd"
+														d="M15.707 15.707a1 1 0 01-1.414 0l-5-5a1 1 0 010-1.414l5-5a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 010 1.414z"
+														clip-rule="evenodd" />
+											<path fill-rule="evenodd"
+														d="M7.707 15.707a1 1 0 01-1.414 0l-5-5a1 1 0 010-1.414l5-5a1 1 0 111.414 1.414L3.414 10l4.293 4.293a1 1 0 010 1.414z"
+														clip-rule="evenodd" />
 										</svg>
 									</button>
 									<button
@@ -782,16 +761,18 @@
 									>
 										<span class="sr-only">Vorherige</span>
 										<svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-											<path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
+											<path fill-rule="evenodd"
+														d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
+														clip-rule="evenodd" />
 										</svg>
 									</button>
 
 									<!-- Page numbers -->
 									{#each Array(Math.min(5, totalPages)) as _, i}
-										{@const pageNum = currentPage <= 3 
-											? i + 1 
-											: currentPage >= totalPages - 2 
-												? totalPages - 4 + i 
+										{@const pageNum = currentPage <= 3
+											? i + 1
+											: currentPage >= totalPages - 2
+												? totalPages - 4 + i
 												: currentPage - 2 + i}
 										{#if pageNum > 0 && pageNum <= totalPages}
 											<button
@@ -814,7 +795,9 @@
 									>
 										<span class="sr-only">Nächste</span>
 										<svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-											<path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+											<path fill-rule="evenodd"
+														d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
+														clip-rule="evenodd" />
 										</svg>
 									</button>
 									<button
@@ -824,8 +807,12 @@
 									>
 										<span class="sr-only">Letzte Seite</span>
 										<svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-											<path fill-rule="evenodd" d="M4.293 15.707a1 1 0 001.414 0l5-5a1 1 0 000-1.414l-5-5a1 1 0 00-1.414 1.414L8.586 10 4.293 14.293a1 1 0 000 1.414z" clip-rule="evenodd" />
-											<path fill-rule="evenodd" d="M12.293 15.707a1 1 0 001.414 0l5-5a1 1 0 000-1.414l-5-5a1 1 0 00-1.414 1.414L16.586 10l-4.293 4.293a1 1 0 000 1.414z" clip-rule="evenodd" />
+											<path fill-rule="evenodd"
+														d="M4.293 15.707a1 1 0 001.414 0l5-5a1 1 0 000-1.414l-5-5a1 1 0 00-1.414 1.414L8.586 10 4.293 14.293a1 1 0 000 1.414z"
+														clip-rule="evenodd" />
+											<path fill-rule="evenodd"
+														d="M12.293 15.707a1 1 0 001.414 0l5-5a1 1 0 000-1.414l-5-5a1 1 0 00-1.414 1.414L16.586 10l-4.293 4.293a1 1 0 000 1.414z"
+														clip-rule="evenodd" />
 										</svg>
 									</button>
 								</nav>
@@ -839,188 +826,14 @@
 </main>
 
 <!-- Add Baby Modal -->
-{#if showAddBabyModal}
-	<div transition:fade={{ duration: 200 }} class="fixed z-10 inset-0 overflow-y-auto" aria-labelledby="modal-title"
-			 role="dialog" aria-modal="true">
-		<div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-
-			<span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-
-			<div
-				in:fly={{ y: 10, duration: 300 }}
-				class="inline-block align-bottom bg-white rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full sm:p-6 z-20"
-			>
-				<div class="absolute top-0 right-0 pt-4 pr-4">
-					<button
-						on:click={() => (showAddBabyModal = false)}
-						type="button"
-						class="bg-white rounded-md text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-					>
-						<span class="sr-only">Schließen</span>
-						<svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-								 stroke="currentColor" aria-hidden="true">
-							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-						</svg>
-					</button>
-				</div>
-
-				<div class="sm:flex sm:items-start">
-					<div
-						class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-indigo-100 sm:mx-0 sm:h-10 sm:w-10">
-						<svg class="h-6 w-6 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-								 stroke="currentColor">
-							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-						</svg>
-					</div>
-					<div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
-						<h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title">
-							Neues Baby hinzufügen
-						</h3>
-						<div class="mt-2">
-							<p class="text-sm text-gray-500">
-								Füge ein neues Baby hinzu oder verwende einen Teilungscode.
-							</p>
-						</div>
-					</div>
-				</div>
-
-				<!-- Tabs -->
-				<div class="mt-4 border-b border-gray-200">
-					<div class="flex -mb-px">
-						<button
-							type="button"
-							class={"w-1/2 py-4 px-1 text-center border-b-2 font-medium text-sm " + 
-								(addBabyMode === 'create' 
-									? "border-indigo-500 text-indigo-600" 
-									: "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300")}
-							on:click={() => addBabyMode = 'create'}
-						>
-							Neues Baby erstellen
-						</button>
-						<button
-							type="button"
-							class={"w-1/2 py-4 px-1 text-center border-b-2 font-medium text-sm " + 
-								(addBabyMode === 'share' 
-									? "border-indigo-500 text-indigo-600" 
-									: "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300")}
-							on:click={() => addBabyMode = 'share'}
-						>
-							Teilungscode verwenden
-						</button>
-					</div>
-				</div>
-
-				{#if addBabyMode === 'create'}
-					<form on:submit|preventDefault={handleAddBaby} class="mt-5 sm:mt-6 space-y-4">
-						<div>
-							<label for="baby-name" class="block text-sm font-medium text-gray-700">Name</label>
-							<input
-								id="baby-name"
-								type="text"
-								bind:value={newBabyName}
-								required
-								placeholder="Name des Babys"
-								class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-							/>
-						</div>
-						<div>
-							<label for="birth-date" class="block text-sm font-medium text-gray-700">Geburtsdatum</label>
-							<input
-								id="birth-date"
-								type="date"
-								bind:value={newBabyBirthDate}
-								required
-								class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-							/>
-						</div>
-						<div>
-							<label for="gender" class="block text-sm font-medium text-gray-700">Geschlecht</label>
-							<select
-								id="gender"
-								bind:value={newBabyGender}
-								required
-								class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
-							>
-								<option value="male">Männlich</option>
-								<option value="female">Weiblich</option>
-								<option value="diverse">Divers</option>
-							</select>
-						</div>
-						<div class="mt-5 sm:mt-6 sm:grid sm:grid-cols-2 sm:gap-3 sm:grid-flow-row-dense">
-							<button
-								type="submit"
-								class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:col-start-2 sm:text-sm"
-								disabled={addingBaby}
-							>
-								{#if addingBaby}
-									<svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none"
-											 viewBox="0 0 24 24">
-										<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-										<path class="opacity-75" fill="currentColor"
-													d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-									</svg>
-									Wird hinzugefügt...
-								{:else}
-									Hinzufügen
-								{/if}
-							</button>
-							<button
-								type="button"
-								on:click={() => (showAddBabyModal = false)}
-								class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:col-start-1 sm:text-sm"
-							>
-								Abbrechen
-							</button>
-						</div>
-					</form>
-				{:else}
-					<form on:submit|preventDefault={handleAddBabyByShareCode} class="mt-5 sm:mt-6 space-y-4">
-						<div>
-							<label for="share-link" class="block text-sm font-medium text-gray-700">Teilungscode oder Link</label>
-							<input
-								id="share-link"
-								type="text"
-								bind:value={shareLink}
-								required
-								placeholder="z.B. https://Baby Log.de/baby/share/abc123 oder abc123"
-								class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-							/>
-							<p class="mt-1 text-xs text-gray-500">
-								Gib den Teilungscode oder den vollständigen Link ein, den du erhalten hast.
-							</p>
-						</div>
-						<div class="mt-5 sm:mt-6 sm:grid sm:grid-cols-2 sm:gap-3 sm:grid-flow-row-dense">
-							<button
-								type="submit"
-								class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:col-start-2 sm:text-sm"
-								disabled={addingBaby}
-							>
-								{#if addingBaby}
-									<svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none"
-											 viewBox="0 0 24 24">
-										<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-										<path class="opacity-75" fill="currentColor"
-													d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-									</svg>
-									Wird hinzugefügt...
-								{:else}
-									Hinzufügen
-								{/if}
-							</button>
-							<button
-								type="button"
-								on:click={() => (showAddBabyModal = false)}
-								class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:col-start-1 sm:text-sm"
-							>
-								Abbrechen
-							</button>
-						</div>
-					</form>
-				{/if}
-			</div>
-		</div>
-	</div>
-{/if}
+<AddBabyModal 
+	showModal={showAddBabyModal} 
+	addingBaby={addingBaby} 
+	{error}
+	on:addBaby={handleAddBaby}
+	on:addBabyByShareCode={handleAddBabyByShareCode}
+	on:close={() => showAddBabyModal = false}
+/>
 
 <!-- QR Code Modal -->
 {#if showQrModal}
