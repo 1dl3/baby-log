@@ -13,6 +13,9 @@ import {
 	sleep
 } from '$lib/server/db/schema';
 import { eq } from 'drizzle-orm';
+import fs from 'fs';
+import path from 'path';
+import { v4 as uuidv4 } from 'uuid';
 
 export const PUT: RequestHandler = async ({ request, params, locals }) => {
 	if (!locals.user) {
@@ -24,7 +27,7 @@ export const PUT: RequestHandler = async ({ request, params, locals }) => {
 
 	try {
 		data = await request.json();
-	} catch (_) {
+	} catch {
 		return json({ error: 'Invalid JSON data' }, { status: 400 });
 	}
 
@@ -269,6 +272,39 @@ export const DELETE: RequestHandler = async ({ params, url, locals }) => {
 	}
 };
 
+// Helper function to upload photos and return URLs
+async function uploadPhotos(photoFiles: File[]) {
+	if (!photoFiles || photoFiles.length === 0) {
+		return [];
+	}
+
+	// Create directory if it doesn't exist
+	const uploadDir = path.join(process.cwd(), 'static', 'uploads', 'logs');
+	if (!fs.existsSync(uploadDir)) {
+		fs.mkdirSync(uploadDir, { recursive: true });
+	}
+
+	// Process multiple photos
+	const photoUrls = [];
+	for (const photoFile of photoFiles) {
+		// Generate a unique filename
+		const fileExtension = photoFile.name.split('.').pop();
+		const fileName = `${Date.now()}_${uuidv4()}.${fileExtension}`;
+		const filePath = path.join(uploadDir, fileName);
+
+		// Save the file
+		const arrayBuffer = await photoFile.arrayBuffer();
+		const buffer = Buffer.from(arrayBuffer);
+		fs.writeFileSync(filePath, buffer);
+
+		// Add the URL to the list
+		const url = `/uploads/logs/${fileName}`;
+		photoUrls.push(url);
+	}
+
+	return photoUrls;
+}
+
 export const POST: RequestHandler = async ({ request, params, locals }) => {
 	if (!locals.user) {
 		return json({ error: 'Unauthorized' }, { status: 401 });
@@ -302,49 +338,120 @@ export const POST: RequestHandler = async ({ request, params, locals }) => {
 	// Milestone tracking fields
 	let category, title, description, achievedAt;
 
-	// Handle different content types based on log type
-	if (type === 'photo' || type === 'photos') {
-		// Handle multipart form data for photo uploads
+	// For photo uploads
+	let photoFiles: File[] = [];
+
+	// Check if the request is multipart form data
+	const contentType = request.headers.get('content-type') || '';
+	if (contentType.includes('multipart/form-data')) {
 		const formData = await request.formData();
 		babyId = formData.get('babyId') as string;
 		notes = formData.get('notes') as string;
-		const itemId = formData.get('itemId') as string;
-		const itemType = formData.get('itemType') as string;
+		timestamp = formData.get('timestamp') as string;
 
-		// Handle the photo file(s)
-		if (type === 'photo') {
-			// Single photo upload (legacy support)
+		// Get photos if they exist
+		if (formData.has('photos')) {
+			photoFiles = formData.getAll('photos') as File[];
+		} else if (formData.has('photo')) {
+			// Legacy single photo support
 			const photoFile = formData.get('photo') as File;
-			if (!photoFile) {
-				return json({ error: 'No photo provided' }, { status: 400 });
+			if (photoFile) {
+				photoFiles = [photoFile];
+			}
+		}
+
+		// For existing item photos
+		const formItemId = formData.get('itemId') as string;
+		const formItemType = formData.get('itemType') as string;
+
+		// Get other form fields based on type
+		if (type === 'feeding') {
+			feedingType = formData.get('feedingType') as string;
+			amount = parseFloat(formData.get('amount') as string);
+			duration = parseInt(formData.get('duration') as string);
+			foodType = formData.get('foodType') as string;
+			foodDetails = formData.get('foodDetails') as string;
+			consistency = formData.get('consistency') as string;
+			reaction = formData.get('reaction') as string;
+		} else if (type === 'nursing') {
+			duration = parseInt(formData.get('duration') as string);
+			side = formData.get('side') as string;
+		} else if (type === 'diaper') {
+			diaperType = formData.get('diaperType') as string;
+		} else if (type === 'measurement') {
+			height = parseFloat(formData.get('height') as string);
+			weightValue = parseFloat(formData.get('weight') as string);
+			headCircumference = parseFloat(formData.get('headCircumference') as string);
+			temperature = parseFloat(formData.get('temperature') as string);
+			teethCount = parseInt(formData.get('teethCount') as string);
+			measurementType = formData.get('measurementType') as string;
+			measurementLocation = formData.get('measurementLocation') as string;
+		} else if (type === 'sleep') {
+			startTime = formData.get('startTime') as string;
+			endTime = formData.get('endTime') as string;
+			quality = formData.get('quality') as string;
+			location = formData.get('location') as string;
+		} else if (type === 'medication') {
+			medicationName = formData.get('medicationName') as string;
+			dosage = parseFloat(formData.get('dosage') as string);
+			unit = formData.get('unit') as string;
+			reason = formData.get('reason') as string;
+			administeredAt = formData.get('administeredAt') as string;
+		} else if (type === 'milestone') {
+			category = formData.get('category') as string;
+			title = formData.get('title') as string;
+			description = formData.get('description') as string;
+			achievedAt = formData.get('achievedAt') as string;
+		}
+
+		// Handle photo uploads for all form types
+		if (photoFiles.length > 0) {
+			const urls = await uploadPhotos(photoFiles);
+
+			// If we have an existing item ID and type, link photos to it
+			if (formItemId && formItemType) {
+				for (const url of urls) {
+					await db.insert(itemPhoto)
+						.values({
+							itemId: formItemId,
+							itemType: formItemType,
+							photoUrl: url
+						});
+				}
 			}
 
-			// In a real implementation, you would upload the file to a storage service
-			// and get back a URL. For this example, we'll just use a placeholder URL.
-			photoUrl = `/uploads/${Date.now()}_${photoFile.name}`;
+			if (urls.length > 0) {
+				photoUrl = urls[0]; // For backward compatibility
+			}
+		}
+	} else if (type === 'photos' && request.headers.get('content-type')?.includes('multipart/form-data')) {
+		// Special case for the 'photos' type
+		const formData = await request.formData();
+		babyId = formData.get('babyId') as string;
+		notes = formData.get('notes') as string;
+		const formItemId = formData.get('itemId') as string;
+		const formItemType = formData.get('itemType') as string;
 
-			// TODO: Implement actual file upload to a storage service
-			console.log(`Photo would be saved to: ${photoUrl}`);
-		} else if (type === 'photos' && itemId && itemType) {
-			// Multiple photos for an existing item
-			const photoFiles = formData.getAll('photos') as File[];
-			if (!photoFiles || photoFiles.length === 0) {
-				return json({ error: 'No photos provided' }, { status: 400 });
+		// Get photos
+		photoFiles = formData.getAll('photos') as File[];
+
+		// Handle photo uploads
+		if (photoFiles.length > 0 && formItemId && formItemType) {
+			const urls = await uploadPhotos(photoFiles);
+
+			// Save photos to the itemPhoto table
+			for (const url of urls) {
+				await db.insert(itemPhoto)
+					.values({
+						itemId: formItemId,
+						itemType: formItemType,
+						photoUrl: url
+					});
 			}
 
-			// Process multiple photos
-			const photoUrls = [];
-			for (const photoFile of photoFiles) {
-				// In a real implementation, you would upload each file to a storage service
-				const url = `/uploads/${Date.now()}_${photoFile.name}`;
-				photoUrls.push(url);
-
-				// TODO: Implement actual file upload to a storage service
-				console.log(`Photo would be saved to: ${url}`);
+			if (urls.length > 0) {
+				photoUrl = urls[0]; // For backward compatibility
 			}
-
-			// Store the URLs for later use
-			photoUrl = photoUrls[0]; // For backward compatibility
 		}
 	} else {
 		// Handle JSON data for other log types
@@ -471,11 +578,27 @@ export const POST: RequestHandler = async ({ request, params, locals }) => {
 					return json({ error: 'No photos provided' }, { status: 400 });
 				}
 
+				// Create directory if it doesn't exist
+				const uploadDir = path.join(process.cwd(), 'static', 'uploads', 'logs');
+				if (!fs.existsSync(uploadDir)) {
+					fs.mkdirSync(uploadDir, { recursive: true });
+				}
+
 				// Process and save each photo
 				const savedPhotos = [];
 				for (const photoFile of photoFiles) {
-					// In a real implementation, you would upload the file to a storage service
-					const url = `/uploads/${Date.now()}_${photoFile.name}`;
+					// Generate a unique filename
+					const fileExtension = photoFile.name.split('.').pop();
+					const fileName = `${Date.now()}_${uuidv4()}.${fileExtension}`;
+					const filePath = path.join(uploadDir, fileName);
+
+					// Save the file
+					const arrayBuffer = await photoFile.arrayBuffer();
+					const buffer = Buffer.from(arrayBuffer);
+					fs.writeFileSync(filePath, buffer);
+
+					// Create the URL
+					const url = `/uploads/logs/${fileName}`;
 
 					// Save the photo in the itemPhoto table
 					const [savedPhoto] = await db
@@ -573,6 +696,24 @@ export const POST: RequestHandler = async ({ request, params, locals }) => {
 
 			default:
 				return json({ error: 'Invalid log type' }, { status: 400 });
+		}
+
+		// Link photos to the newly created log entry if we have photos but no existing item
+		if (photoFiles.length > 0 && photoUrl && !formItemId && !formItemType && log?.id) {
+			const urls = await uploadPhotos(photoFiles);
+
+			// Save each photo URL in the itemPhoto table
+			for (const url of urls) {
+				await db.insert(itemPhoto)
+					.values({
+						itemId: log.id,
+						itemType: type,
+						photoUrl: url
+					});
+			}
+
+			// Add the photos to the response
+			log.photos = urls;
 		}
 
 		return json(log);
