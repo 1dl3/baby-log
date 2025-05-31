@@ -1,7 +1,7 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { db } from '$lib/server/db';
-import { diaperChange, feeding, nursing } from '$lib/server/db/schema';
+import { diaperChange, feeding, medication, milestone, nursing, sleep } from '$lib/server/db/schema';
 import { and, eq, gte, lte } from 'drizzle-orm';
 
 // Get diaper statistics for a baby
@@ -32,7 +32,7 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 						gte(diaperChange.timestamp, start),
 						lte(diaperChange.timestamp, end)
 					),
-					orderBy: (diaperLog, { asc }) => [asc(diaperChange.timestamp)]
+					orderBy: (diaperChange, { asc }) => [asc(diaperChange.timestamp)]
 				});
 				break;
 
@@ -54,10 +54,41 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 						gte(nursing.timestamp, start),
 						lte(nursing.timestamp, end)
 					),
-					orderBy: (nursingLog, { asc }) => [asc(nursingLog.timestamp)]
+					orderBy: (nursing, { asc }) => [asc(nursing.timestamp)]
 				});
 				break;
 
+			case 'milestone':
+				stats = await db.query.milestone.findMany({
+					where: and(
+						eq(milestone.babyId, babyId),
+						gte(milestone.achievedAt, start),
+						lte(milestone.achievedAt, end)
+					),
+					orderBy: (milestone, { asc }) => [asc(milestone.achievedAt)]
+				});
+				break;
+
+			case 'sleep':
+				stats = await db.query.sleep.findMany({
+					where: and(
+						eq(sleep.babyId, babyId),
+						gte(sleep.startTime, start),
+						lte(sleep.startTime, end)
+					),
+					orderBy: (sleep, { asc }) => [asc(sleep.startTime)]
+				});
+				break;
+			case 'medication':
+				stats = await db.query.medication.findMany({
+					where: and(
+						eq(medication.babyId, babyId),
+						gte(medication.administeredAt, start),
+						lte(medication.administeredAt, end)
+					),
+					orderBy: (medication, { asc }) => [asc(medication.administeredAt)]
+				});
+				break;
 			default:
 				return json({ error: 'Invalid statistics type' }, { status: 400 });
 		}
