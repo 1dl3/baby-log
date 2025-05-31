@@ -60,7 +60,6 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 			const entriesWithPhotos = [];
 			for (const entry of entries) {
 				const photos = await fetchItemPhotos(entry.id, itemType);
-				console.log(entry, photos)
 				entriesWithPhotos.push({
 					...entry,
 					itemPhotos: photos.map(photo => photo.photoUrl)
