@@ -12,6 +12,262 @@ import {
 	photo,
 	sleep
 } from '$lib/server/db/schema';
+import { eq } from 'drizzle-orm';
+
+export const PUT: RequestHandler = async ({ request, params, locals }) => {
+	if (!locals.user) {
+		return json({ error: 'Unauthorized' }, { status: 401 });
+	}
+
+	const { type } = params;
+	let data;
+
+	try {
+		data = await request.json();
+	} catch (_) {
+		return json({ error: 'Invalid JSON data' }, { status: 400 });
+	}
+
+	const { id } = data;
+	if (!id) {
+		return json({ error: 'Missing required parameter: id' }, { status: 400 });
+	}
+
+	try {
+		let updatedItem;
+
+		switch (type) {
+			case 'diaper':
+				[updatedItem] = await db.update(diaperChange)
+					.set({
+						type: data.type,
+						notes: data.notes,
+						...(data.timestamp ? { timestamp: new Date(data.timestamp) } : {})
+					})
+					.where(eq(diaperChange.id, id))
+					.returning();
+				break;
+
+			case 'feeding':
+				[updatedItem] = await db.update(feeding)
+					.set({
+						type: data.feedingType || data.type,
+						amount: data.amount,
+						foodType: data.foodType,
+						foodDetails: data.foodDetails,
+						consistency: data.consistency,
+						reaction: data.reaction,
+						notes: data.notes,
+						...(data.timestamp ? { timestamp: new Date(data.timestamp) } : {})
+					})
+					.where(eq(feeding.id, id))
+					.returning();
+				break;
+
+			case 'nursing':
+				[updatedItem] = await db.update(nursing)
+					.set({
+						duration: data.duration,
+						side: data.side,
+						notes: data.notes,
+						...(data.timestamp ? { timestamp: new Date(data.timestamp) } : {})
+					})
+					.where(eq(nursing.id, id))
+					.returning();
+				break;
+
+			case 'photo':
+				[updatedItem] = await db.update(photo)
+					.set({
+						notes: data.notes,
+						...(data.timestamp ? { timestamp: new Date(data.timestamp) } : {})
+					})
+					.where(eq(photo.id, id))
+					.returning();
+				break;
+
+			case 'measurement':
+				[updatedItem] = await db.update(measurement)
+					.set({
+						height: data.height,
+						weight: data.weight,
+						headCircumference: data.headCircumference,
+						temperature: data.temperature,
+						teethCount: data.teethCount,
+						measurementType: data.measurementType,
+						measurementLocation: data.measurementLocation,
+						notes: data.notes,
+						...(data.timestamp ? { timestamp: new Date(data.timestamp) } : {})
+					})
+					.where(eq(measurement.id, id))
+					.returning();
+				break;
+
+			case 'sleep':
+				[updatedItem] = await db.update(sleep)
+					.set({
+						startTime: data.startTime ? new Date(data.startTime) : undefined,
+						endTime: data.endTime ? new Date(data.endTime) : undefined,
+						duration: data.duration,
+						quality: data.quality,
+						location: data.location,
+						notes: data.notes
+					})
+					.where(eq(sleep.id, id))
+					.returning();
+				break;
+
+			case 'medication':
+				[updatedItem] = await db.update(medication)
+					.set({
+						name: data.medicationName || data.name,
+						dosage: data.dosage,
+						unit: data.unit,
+						reason: data.reason,
+						administeredAt: data.administeredAt ? new Date(data.administeredAt) : undefined,
+						notes: data.notes
+					})
+					.where(eq(medication.id, id))
+					.returning();
+				break;
+
+			case 'milestone':
+				[updatedItem] = await db.update(milestone)
+					.set({
+						category: data.category,
+						title: data.title,
+						description: data.description,
+						achievedAt: data.achievedAt ? new Date(data.achievedAt) : undefined,
+						notes: data.notes,
+						photoUrl: data.photoUrl
+					})
+					.where(eq(milestone.id, id))
+					.returning();
+				break;
+
+			default:
+				return json({ error: 'Invalid log type' }, { status: 400 });
+		}
+
+		if (!updatedItem) {
+			return json({ error: 'Item not found' }, { status: 404 });
+		}
+
+		return json({ success: true, updatedItem });
+	} catch (error) {
+		console.error('Error updating log entry:', error);
+		return json({ error: 'Internal server error' }, { status: 500 });
+	}
+};
+
+export const DELETE: RequestHandler = async ({ params, url, locals }) => {
+	if (!locals.user) {
+		return json({ error: 'Unauthorized' }, { status: 401 });
+	}
+
+	const { type } = params;
+	const id = url.searchParams.get('id');
+
+	if (!id) {
+		return json({ error: 'Missing required parameter: id' }, { status: 400 });
+	}
+
+	try {
+		let deletedItem;
+
+		switch (type) {
+			case 'diaper':
+				// Delete associated photos first
+				await db.delete(itemPhoto).where(
+					eq(itemPhoto.itemId, id)
+				);
+
+				// Then delete the item
+				[deletedItem] = await db.delete(diaperChange)
+					.where(eq(diaperChange.id, id))
+					.returning();
+				break;
+
+			case 'feeding':
+				await db.delete(itemPhoto).where(
+					eq(itemPhoto.itemId, id)
+				);
+
+				[deletedItem] = await db.delete(feeding)
+					.where(eq(feeding.id, id))
+					.returning();
+				break;
+
+			case 'nursing':
+				await db.delete(itemPhoto).where(
+					eq(itemPhoto.itemId, id)
+				);
+
+				[deletedItem] = await db.delete(nursing)
+					.where(eq(nursing.id, id))
+					.returning();
+				break;
+
+			case 'photo':
+				[deletedItem] = await db.delete(photo)
+					.where(eq(photo.id, id))
+					.returning();
+				break;
+
+			case 'measurement':
+				await db.delete(itemPhoto).where(
+					eq(itemPhoto.itemId, id)
+				);
+
+				[deletedItem] = await db.delete(measurement)
+					.where(eq(measurement.id, id))
+					.returning();
+				break;
+
+			case 'sleep':
+				await db.delete(itemPhoto).where(
+					eq(itemPhoto.itemId, id)
+				);
+
+				[deletedItem] = await db.delete(sleep)
+					.where(eq(sleep.id, id))
+					.returning();
+				break;
+
+			case 'medication':
+				await db.delete(itemPhoto).where(
+					eq(itemPhoto.itemId, id)
+				);
+
+				[deletedItem] = await db.delete(medication)
+					.where(eq(medication.id, id))
+					.returning();
+				break;
+
+			case 'milestone':
+				await db.delete(itemPhoto).where(
+					eq(itemPhoto.itemId, id)
+				);
+
+				[deletedItem] = await db.delete(milestone)
+					.where(eq(milestone.id, id))
+					.returning();
+				break;
+
+			default:
+				return json({ error: 'Invalid log type' }, { status: 400 });
+		}
+
+		if (!deletedItem) {
+			return json({ error: 'Item not found' }, { status: 404 });
+		}
+
+		return json({ success: true, deletedItem });
+	} catch (error) {
+		console.error('Error deleting log entry:', error);
+		return json({ error: 'Internal server error' }, { status: 500 });
+	}
+};
 
 export const POST: RequestHandler = async ({ request, params, locals }) => {
 	if (!locals.user) {

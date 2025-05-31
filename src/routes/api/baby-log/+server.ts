@@ -98,7 +98,6 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 					...(end ? [lte(nursing.timestamp, end)] : [])
 				),
 				with:{
-					itemPhoto
 				},
 				orderBy: (nursing, { desc }) => [desc(nursing.timestamp)]
 			});

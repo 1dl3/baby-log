@@ -4,10 +4,11 @@
  import type { PageData } from './$types';
  import { fade, fly } from 'svelte/transition';
  import { flip } from 'svelte/animate';
- import AddBabyModal from '$lib/components/AddBabyModal.svelte';
- import AddEntryModal from '$lib/components/AddEntryModal.svelte';
+ import AddBabyModal from '$lib/components/modals/AddBabyModal.svelte';
+ import AddEntryModal from '$lib/components/modals/AddEntryModal.svelte';
  import LogEntryDetail from '$lib/components/LogEntryDetail.svelte';
  import PhotoLightbox from '$lib/components/PhotoLightbox.svelte';
+ import EditEntryModal from '$lib/components/modals/EditEntryModal.svelte';
  import { calculateAge } from '$lib/utils';
 
 	// Define types for our data
@@ -101,6 +102,12 @@
 	let lightboxOpen = false;
 	let lightboxPhotos: string[] = [];
 	let lightboxCurrentIndex = 0;
+
+	// Edit modal state
+	let showEditModal = false;
+	let editingEntry: LogEntry | null = null;
+	let editingError = '';
+	let editingSuccess = false;
 
 	// Function to open the lightbox
 	function openLightbox(photoUrl: string, allPhotos: string[] = []) {
@@ -369,6 +376,83 @@
 			error = 'Fehler beim Hinzufügen des Eintrags';
 		} finally {
 			addingEntry = false;
+		}
+	}
+
+	// Function to handle edit button click
+	function handleEditEntry(entry: LogEntry) {
+		editingEntry = entry;
+		showEditModal = true;
+	}
+
+	// Function to handle delete button click
+	async function handleDeleteEntry(entry: LogEntry) {
+		if (!entry || !entry.id) return;
+
+		try {
+			const response = await fetch(`/api/baby-log/${entry.logType}?id=${entry.id}`, {
+				method: 'DELETE'
+			});
+
+			if (!response.ok) throw new Error('Failed to delete entry');
+
+			// Show success message
+			successMessage = 'Eintrag erfolgreich gelöscht!';
+			showSuccessMessage = true;
+			setTimeout(() => {
+				showSuccessMessage = false;
+			}, 3000);
+
+			// Refresh log entries
+			fetchLogEntries();
+		} catch (err) {
+			error = 'Fehler beim Löschen des Eintrags';
+			console.error('Error deleting entry:', err);
+		}
+	}
+
+	// Function to handle edit form submission
+	async function handleEditSubmit(event) {
+		if (!editingEntry) return;
+
+		editingError = '';
+
+		try {
+			const { formData, type } = event.detail;
+			const endpoint = `/api/baby-log/${type}`;
+
+			const response = await fetch(endpoint, {
+				method: 'PUT',
+				headers: {
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify(formData)
+			});
+
+			if (!response.ok) throw new Error('Failed to update entry');
+
+			// Show success message
+			successMessage = 'Eintrag erfolgreich aktualisiert!';
+			showSuccessMessage = true;
+			setTimeout(() => {
+				showSuccessMessage = false;
+			}, 3000);
+
+			// Set success state in edit modal
+			editingSuccess = true;
+
+			// Refresh log entries
+			fetchLogEntries();
+
+			// Close modal after a delay
+			setTimeout(() => {
+				showEditModal = false;
+				editingSuccess = false;
+				editingEntry = null;
+			}, 2000);
+		} catch (err) {
+			editingError = 'Fehler beim Aktualisieren des Eintrags';
+			console.error('Error updating entry:', err);
 		}
 	}
 
@@ -668,7 +752,13 @@
 			{:else}
 				<div class="grid grid-cols-1 gap-4">
 					{#each logEntries as entry (entry.id)}
-						<LogEntryDetail {entry} onPhotoClick={openLightbox} />
+						<LogEntryDetail 
+							{entry} 
+							onPhotoClick={openLightbox} 
+							onEdit={handleEditEntry} 
+							onDelete={handleDeleteEntry} 
+							canEdit={!selectedBaby?.isShared || selectedBaby?.canEdit}
+						/>
 					{/each}
 				</div>
 
@@ -813,6 +903,19 @@
   currentIndex={lightboxCurrentIndex} 
   isOpen={lightboxOpen} 
   on:close={closeLightbox} 
+/>
+
+<!-- Edit Entry Modal -->
+<EditEntryModal
+  showModal={showEditModal}
+  baby={selectedBaby}
+  entry={editingEntry}
+  error={editingError}
+  success={editingSuccess}
+  on:submit={handleEditSubmit}
+  on:cancel={() => showEditModal = false}
+  on:close={() => showEditModal = false}
+  on:error={(e) => editingError = e.detail}
 />
 
 <!-- QR Code Modal -->

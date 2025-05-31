@@ -11,8 +11,6 @@
   import NursingForm from '$lib/components/forms/NursingForm.svelte';
   import PhotoForm from '$lib/components/forms/PhotoForm.svelte';
   import PhotosForm from '$lib/components/forms/PhotosForm.svelte';
-  import SizeForm from '$lib/components/forms/SizeForm.svelte';
-  import WeightForm from '$lib/components/forms/WeightForm.svelte';
   import MeasurementForm from '$lib/components/forms/MeasurementForm.svelte';
 
   let type = page.params.type;

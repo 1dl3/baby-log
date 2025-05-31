@@ -3,7 +3,7 @@
 	import UserInfo from './UserInfo.svelte';
 	import { clearUser, user, setUser } from '$lib/stores/user';
 	import { onMount } from 'svelte';
-	import ConfirmDialog from './ConfirmDialog.svelte';
+	import ConfirmDialog from '$lib/components/modals/ConfirmDialog.svelte';
 
 	export let userData: {
 		id?: string;
@@ -106,12 +106,12 @@
 					</div>
 					{#if $user}
 						<nav class="hidden sm:ml-6 sm:flex sm:space-x-8">
-							<a
-								href="/dashboard"
-								class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium {page.url.pathname.startsWith('/dashboard') ? 'border-indigo-500 text-gray-900' : ''}"
-							>
-								Dashboard
-							</a>
+<!--							<a-->
+<!--								href="/dashboard"-->
+<!--								class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium {page.url.pathname.startsWith('/dashboard') ? 'border-indigo-500 text-gray-900' : ''}"-->
+<!--							>-->
+<!--								Dashboard-->
+<!--							</a>-->
 <!--							<a-->
 <!--								href="/log"-->
 <!--								class="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium {page.url.pathname.startsWith('/log') ? 'border-indigo-500 text-gray-900' : ''}"-->

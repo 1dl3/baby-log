@@ -4,8 +4,8 @@
  import { fade, fly } from 'svelte/transition';
  import { flip } from 'svelte/animate';
  import { user } from '$lib/stores/user';
- import AddBabyModal from '$lib/components/AddBabyModal.svelte';
- import ConfirmDialog from '$lib/components/ConfirmDialog.svelte';
+ import AddBabyModal from '$lib/components/modals/AddBabyModal.svelte';
+ import ConfirmDialog from '$lib/components/modals/ConfirmDialog.svelte';
  import { calculateAge } from '$lib/utils';
 
 	// Define types for our data

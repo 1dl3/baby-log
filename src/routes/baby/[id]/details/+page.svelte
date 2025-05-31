@@ -3,7 +3,7 @@
 	import { page } from '$app/state';
 	import { fade, fly } from 'svelte/transition';
 	import { user } from '$lib/stores/user';
-	import ConfirmDialog from '$lib/components/ConfirmDialog.svelte';
+	import ConfirmDialog from '$lib/components/modals/ConfirmDialog.svelte';
 	import { calculateAge } from '$lib/utils';
 
 	// Define types for our data

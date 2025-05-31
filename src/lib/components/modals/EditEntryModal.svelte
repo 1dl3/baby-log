@@ -3,40 +3,74 @@
   import { fade, fly } from 'svelte/transition';
 
   // Import form components
-  import SleepForm from './forms/SleepForm.svelte';
-  import MedicationForm from './forms/MedicationForm.svelte';
-  import MilestoneForm from './forms/MilestoneForm.svelte';
-  import DiaperForm from './forms/DiaperForm.svelte';
-  import FeedingForm from './forms/FeedingForm.svelte';
-  import NursingForm from './forms/NursingForm.svelte';
-  import PhotoForm from './forms/PhotoForm.svelte';
-  import SizeForm from './forms/SizeForm.svelte';
-  import WeightForm from './forms/WeightForm.svelte';
-  import MeasurementForm from './forms/MeasurementForm.svelte';
+  import SleepForm from '$lib/components/forms/SleepForm.svelte';
+  import MedicationForm from '$lib/components/forms/MedicationForm.svelte';
+  import MilestoneForm from '$lib/components/forms/MilestoneForm.svelte';
+  import DiaperForm from '$lib/components/forms/DiaperForm.svelte';
+  import FeedingForm from '$lib/components/forms/FeedingForm.svelte';
+  import NursingForm from '$lib/components/forms/NursingForm.svelte';
+  import PhotoForm from '$lib/components/forms/PhotoForm.svelte';
+  import MeasurementForm from '$lib/components/forms/MeasurementForm.svelte';
 
   export let showModal = false;
   export let baby: { id: string; name: string } | null = null;
+  export let entry: {
+    id: string;
+    babyId: string;
+    userId: string;
+    timestamp: string;
+    logType: string;
+    notes?: string;
+    photoUrl?: string;
+    itemPhotos?: string[];
+    // Diaper specific
+    type?: 'wet' | 'dirty' | 'both';
+    // Feeding specific
+    amount?: number;
+    foodType?: string;
+    foodDetails?: string;
+    consistency?: string;
+    reaction?: string;
+    // Nursing specific
+    duration?: number;
+    side?: 'left' | 'right' | 'both';
+    // Sleep specific
+    startTime?: string;
+    endTime?: string;
+    quality?: string;
+    location?: string;
+    // Medication specific
+    name?: string;
+    dosage?: string;
+    unit?: string;
+    reason?: string;
+    administeredAt?: string;
+    // Milestone specific
+    category?: string;
+    title?: string;
+    description?: string;
+    achievedAt?: string;
+    // Measurement specific
+    height?: number;
+    weight?: number;
+    headCircumference?: number;
+    temperature?: number;
+    teethCount?: number;
+    measurementType?: string;
+    measurementLocation?: string;
+    [key: string]: string | number | string[] | undefined;
+  } | null = null; // The entry to edit
   export let error = '';
   export let success = false;
 
   const dispatch = createEventDispatcher();
 
-  let selectedType = 'diaper';
-
-  // Map for entry types
-  const entryTypes = {
-    diaper: { name: 'Windel wechseln', icon: '🧷' },
-    feeding: { name: 'Fütterung', icon: '🍼' },
-    nursing: { name: 'Stillen', icon: '👩‍🍼' },
-    photo: { name: 'Foto', icon: '📷' },
-    measurement: { name: 'Messung', icon: '📊' },
-    sleep: { name: 'Schlaf', icon: '😴' },
-    medication: { name: 'Medikament', icon: '💊' },
-    milestone: { name: 'Meilenstein', icon: '🏆' }
-  };
-
   function handleSubmit(event) {
-    dispatch('submit', { ...event.detail, type: selectedType });
+    // Add the entry ID to the form data
+    const formData = event.detail.formData;
+    formData.id = entry.id;
+
+    dispatch('submit', { ...event.detail, formData });
   }
 
   function handleCancel() {
@@ -52,7 +86,7 @@
   }
 </script>
 
-{#if showModal}
+{#if showModal && entry}
   <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
 
   <div transition:fade={{ duration: 200 }} class="fixed z-10 inset-0 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
@@ -80,35 +114,20 @@
         <div class="sm:flex sm:items-start mb-5">
           <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-indigo-100 sm:mx-0 sm:h-10 sm:w-10">
             <svg class="h-6 w-6 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
             </svg>
           </div>
           <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
             <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title">
-              Neuen Eintrag erstellen
+              Eintrag bearbeiten
             </h3>
             <div class="mt-2">
               <p class="text-sm text-gray-500">
-                Wähle die Art des Eintrags, den du erstellen möchtest.
+                Bearbeite die Details des Eintrags.
               </p>
             </div>
           </div>
         </div>
-
-        {#if !success}
-          <div class="mb-5">
-            <label for="entry-type" class="block text-sm font-medium text-gray-700">Eintragstyp</label>
-            <select
-              id="entry-type"
-              bind:value={selectedType}
-              class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
-            >
-              {#each Object.entries(entryTypes) as [value, { name, icon }] (value)}
-                <option value={value}>{icon} {name}</option>
-              {/each}
-            </select>
-          </div>
-        {/if}
 
         {#if error}
           <div class="mb-4 bg-red-50 border-l-4 border-red-400 p-4 rounded shadow-sm">
@@ -153,26 +172,22 @@
             </div>
           </div>
         {:else if baby}
-          {#if selectedType === 'sleep'}
-            <SleepForm {baby} {error} {success} on:submit={handleSubmit} on:cancel={handleCancel} on:error={handleError} />
-          {:else if selectedType === 'medication'}
-            <MedicationForm {baby} {error} {success} on:submit={handleSubmit} on:cancel={handleCancel} on:error={handleError} />
-          {:else if selectedType === 'milestone'}
-            <MilestoneForm {baby} {error} {success} on:submit={handleSubmit} on:cancel={handleCancel} on:error={handleError} />
-          {:else if selectedType === 'diaper'}
-            <DiaperForm {baby} {error} {success} on:submit={handleSubmit} on:cancel={handleCancel} on:error={handleError} />
-          {:else if selectedType === 'feeding'}
-            <FeedingForm {baby} {error} {success} on:submit={handleSubmit} on:cancel={handleCancel} on:error={handleError} />
-          {:else if selectedType === 'nursing'}
-            <NursingForm {baby} {error} {success} on:submit={handleSubmit} on:cancel={handleCancel} on:error={handleError} />
-          {:else if selectedType === 'photo'}
-            <PhotoForm {baby} {error} {success} on:submit={handleSubmit} on:cancel={handleCancel} on:error={handleError} />
-          {:else if selectedType === 'size'}
-            <SizeForm {baby} {error} {success} on:submit={handleSubmit} on:cancel={handleCancel} on:error={handleError} />
-          {:else if selectedType === 'weight'}
-            <WeightForm {baby} {error} {success} on:submit={handleSubmit} on:cancel={handleCancel} on:error={handleError} />
-          {:else if selectedType === 'measurement'}
-            <MeasurementForm {baby} {error} {success} on:submit={handleSubmit} on:cancel={handleCancel} on:error={handleError} />
+          {#if entry.logType === 'sleep'}
+            <SleepForm {baby} {error} {success} entry={entry} on:submit={handleSubmit} on:cancel={handleCancel} on:error={handleError} />
+          {:else if entry.logType === 'medication'}
+            <MedicationForm {baby} {error} {success} entry={entry} on:submit={handleSubmit} on:cancel={handleCancel} on:error={handleError} />
+          {:else if entry.logType === 'milestone'}
+            <MilestoneForm {baby} {error} {success} entry={entry} on:submit={handleSubmit} on:cancel={handleCancel} on:error={handleError} />
+          {:else if entry.logType === 'diaper'}
+            <DiaperForm {baby} {error} {success} entry={entry} on:submit={handleSubmit} on:cancel={handleCancel} on:error={handleError} />
+          {:else if entry.logType === 'feeding'}
+            <FeedingForm {baby} {error} {success} entry={entry} on:submit={handleSubmit} on:cancel={handleCancel} on:error={handleError} />
+          {:else if entry.logType === 'nursing'}
+            <NursingForm {baby} {error} {success} entry={entry} on:submit={handleSubmit} on:cancel={handleCancel} on:error={handleError} />
+          {:else if entry.logType === 'photo'}
+            <PhotoForm {baby} {error} {success} entry={entry} on:submit={handleSubmit} on:cancel={handleCancel} on:error={handleError} />
+          {:else if entry.logType === 'measurement'}
+            <MeasurementForm {baby} {error} {success} entry={entry} on:submit={handleSubmit} on:cancel={handleCancel} on:error={handleError} />
           {/if}
         {:else}
           <div class="text-center py-6">
