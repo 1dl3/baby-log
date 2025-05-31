@@ -60,6 +60,7 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 			const entriesWithPhotos = [];
 			for (const entry of entries) {
 				const photos = await fetchItemPhotos(entry.id, itemType);
+				console.log(entry, photos)
 				entriesWithPhotos.push({
 					...entry,
 					itemPhotos: photos.map(photo => photo.photoUrl)
@@ -154,7 +155,7 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 			});
 
 			// Process entries to add item photos
-			const diaperEntriesWithPhotos = await addItemPhotosToEntries(diaperEntries, 'diaperChange');
+			const diaperEntriesWithPhotos = await addItemPhotosToEntries(diaperEntries, 'diaper');
 			const feedingEntriesWithPhotos = await addItemPhotosToEntries(feedingEntries, 'feeding');
 			const nursingEntriesWithPhotos = await addItemPhotosToEntries(nursingEntries, 'nursing');
 			const sleepEntriesWithPhotos = await addItemPhotosToEntries(sleepEntries, 'sleep');
