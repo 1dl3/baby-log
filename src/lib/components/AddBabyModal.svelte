@@ -77,7 +77,7 @@
 </script>
 
 {#if showModal}
-	<div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
+	<div class="fixed inset-0 bg-gray-200 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
 
 	<div transition:fade={{ duration: 200 }} class="fixed z-10 backdrop:backdrop-blur-2xl inset-0 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
 

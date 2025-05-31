@@ -69,7 +69,6 @@
 
       success = true;
     } catch (e) {
-      console.log(e);
       error = 'Failed to save log entry';
     }
   }

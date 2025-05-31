@@ -3,6 +3,7 @@
 	import { page } from '$app/state';
 	import { fade, fly } from 'svelte/transition';
 	import { user } from '$lib/stores/user';
+	import ConfirmDialog from '$lib/components/ConfirmDialog.svelte';
 
 	// Define types for our data
 	interface Baby {
@@ -65,6 +66,10 @@
 	let loadingSharedUsers = false;
 	let showShareCodeModal = false;
 
+	// Confirmation dialog state
+	let showConfirmDialog = false;
+	let qrCodeToDelete: string | null = null;
+
 	function openQrModal() {
 		showQrModal = true;
 	}
@@ -99,14 +104,12 @@
 		await fetchStatistics('sleep');
 		await fetchStatistics('medication');
 		await fetchStatistics('milestone');
-		console.log(baby, $user)
 		if (baby) {
 			isOwner = baby.userId === $user?.id;
 			if (isOwner) {
 				await fetchSharedUsers();
 			}
 		}
-		console.log(isOwner);
 		loading = false;
 	});
 
@@ -346,7 +349,17 @@
 		}
 	}
 
-	async function deleteQrCode(id: string) {
+	function confirmDeleteQrCode(id: string) {
+		qrCodeToDelete = id;
+		showConfirmDialog = true;
+	}
+
+	async function deleteQrCode() {
+		if (!qrCodeToDelete) return;
+
+		const id = qrCodeToDelete;
+		qrCodeToDelete = null;
+
 		try {
 			const res = await fetch('/api/qr-codes', {
 				method: 'DELETE',
@@ -1175,7 +1188,7 @@
 											Herunterladen
 										</button>
 										<button
-											on:click={() => deleteQrCode(code.id)}
+           on:click={() => confirmDeleteQrCode(code.id)}
 											class="w-full inline-flex justify-center items-center px-4 py-2 border border-red-300 shadow-sm text-sm font-medium rounded-md text-red-700 bg-white hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
 										>
 											<svg class="-ml-1 mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"

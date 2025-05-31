@@ -61,10 +61,4 @@ export function clearUser(): void {
 	}
 
 	user.set(null);
-
-	// Subscribe to the store to verify it was cleared
-	const unsubscribe = user.subscribe((value) => {
-		console.log('User store cleared:', value);
-		unsubscribe();
-	});
 }

@@ -3,6 +3,7 @@
 	import UserInfo from './UserInfo.svelte';
 	import { clearUser, user, setUser } from '$lib/stores/user';
 	import { onMount } from 'svelte';
+	import ConfirmDialog from './ConfirmDialog.svelte';
 
 	export let userData: {
 		id?: string;
@@ -35,6 +36,11 @@
 
 	let isMenuOpen = false;
 	// Use the user prop to determine if the user is authenticated
+
+	// Dialog state
+	let showDialog = false;
+	let dialogMessage = '';
+	let dialogTitle = '';
 
 	function toggleMenu() {
 		isMenuOpen = !isMenuOpen;
@@ -71,14 +77,20 @@
 			});
 
 			if (response.ok) {
-				alert('Verifizierungslink wurde erneut gesendet. Bitte überprüfe deinen Posteingang.');
+				dialogTitle = 'Erfolg';
+				dialogMessage = 'Verifizierungslink wurde erneut gesendet. Bitte überprüfe deinen Posteingang.';
+				showDialog = true;
 			} else {
 				const data = await response.json();
-				alert(data.error || 'Fehler beim Senden des Verifizierungslinks.');
+				dialogTitle = 'Fehler';
+				dialogMessage = data.error || 'Fehler beim Senden des Verifizierungslinks.';
+				showDialog = true;
 			}
 		} catch (err) {
 			console.error('Verification request error:', err);
-			alert('Fehler beim Senden des Verifizierungslinks.');
+			dialogTitle = 'Fehler';
+			dialogMessage = 'Fehler beim Senden des Verifizierungslinks.';
+			showDialog = true;
 		}
 	}
 </script>
@@ -165,18 +177,21 @@
 				<div class="pt-2 pb-3 space-y-1">
 					{#if $user}
 						<a
+							on:click={toggleMenu}
 							href="/dashboard"
 							class="bg-indigo-50 border-indigo-500 text-indigo-700 block pl-3 pr-4 py-2 border-l-4 text-base font-medium {page.url.pathname.startsWith('/dashboard') ? 'bg-indigo-50 border-indigo-500 text-indigo-700' : 'border-transparent text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800'}"
 						>
 							Dashboard
 						</a>
 						<a
+							on:click={toggleMenu}
 							href="/statistics"
 							class="border-transparent text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800 block pl-3 pr-4 py-2 border-l-4 text-base font-medium {page.url.pathname.startsWith('/log') ? 'bg-indigo-50 border-indigo-500 text-indigo-700' : ''}"
 						>
 							Statistiken
 						</a>
 						<a
+							on:click={toggleMenu}
 							href="/settings"
 							class="border-transparent text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800 block pl-3 pr-4 py-2 border-l-4 text-base font-medium {page.url.pathname.startsWith('/statistics') ? 'bg-indigo-50 border-indigo-500 text-indigo-700' : ''}"
 						>
@@ -255,5 +270,14 @@
 				</div>
 			</div>
 		</div>
-	</footer>
+ </footer>
+
+	<!-- Confirmation Dialog -->
+	<ConfirmDialog
+		bind:showDialog
+		title={dialogTitle}
+		message={dialogMessage}
+		type="alert"
+		confirmText="OK"
+	/>
 </div>
