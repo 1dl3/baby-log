@@ -4,6 +4,7 @@ import { db } from '$lib/server/db';
 import {
 	diaperChange,
 	feeding,
+	itemPhoto,
 	measurement,
 	medication,
 	milestone,
@@ -40,8 +41,32 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 		let totalCount = 0;
 
 		// Helper function to add type information to log entries
-		const addTypeInfo = (entries: any, type: any) =>
-			entries.map((entry:any) => ({ ...entry, logType: type }));
+		const addTypeInfo = <T extends Record<string, unknown>>(entries: T[], type: string) =>
+			entries.map((entry) => ({ ...entry, logType: type }));
+
+		// Helper function to fetch item photos
+		const fetchItemPhotos = async (itemId: string, itemType: string) => {
+			return await db.query.itemPhoto.findMany({
+				where: and(
+					eq(itemPhoto.itemId, itemId),
+					eq(itemPhoto.itemType, itemType)
+				),
+				orderBy: (itemPhoto, { desc }) => [desc(itemPhoto.timestamp)]
+			});
+		};
+
+		// Helper function to add item photos to entries
+		const addItemPhotosToEntries = async <T extends { id: string }>(entries: T[], itemType: string) => {
+			const entriesWithPhotos = [];
+			for (const entry of entries) {
+				const photos = await fetchItemPhotos(entry.id, itemType);
+				entriesWithPhotos.push({
+					...entry,
+					itemPhotos: photos.map(photo => photo.photoUrl)
+				});
+			}
+			return entriesWithPhotos;
+		};
 
 		// Fetch all types if no specific type is requested
 		if (!type || type === 'all') {
@@ -72,6 +97,9 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 					...(start ? [gte(nursing.timestamp, start)] : []),
 					...(end ? [lte(nursing.timestamp, end)] : [])
 				),
+				with:{
+					itemPhoto
+				},
 				orderBy: (nursing, { desc }) => [desc(nursing.timestamp)]
 			});
 
@@ -125,33 +153,42 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 				orderBy: (photoLog, { desc }) => [desc(photoLog.timestamp)]
 			});
 
+			// Process entries to add item photos
+			const diaperEntriesWithPhotos = await addItemPhotosToEntries(diaperEntries, 'diaperChange');
+			const feedingEntriesWithPhotos = await addItemPhotosToEntries(feedingEntries, 'feeding');
+			const nursingEntriesWithPhotos = await addItemPhotosToEntries(nursingEntries, 'nursing');
+			const sleepEntriesWithPhotos = await addItemPhotosToEntries(sleepEntries, 'sleep');
+			const medicationEntriesWithPhotos = await addItemPhotosToEntries(medicationEntries, 'medication');
+			const milestoneEntriesWithPhotos = await addItemPhotosToEntries(milestoneEntries, 'milestone');
+			const measurementEntriesWithPhotos = await addItemPhotosToEntries(measurementEntries, 'measurement');
+
 			// Combine all entries with type information
 			const allEntries = [
-				...addTypeInfo(diaperEntries, 'diaper'),
-				...addTypeInfo(feedingEntries, 'feeding'),
-				...addTypeInfo(nursingEntries, 'nursing'),
+				...addTypeInfo(diaperEntriesWithPhotos, 'diaper'),
+				...addTypeInfo(feedingEntriesWithPhotos, 'feeding'),
+				...addTypeInfo(nursingEntriesWithPhotos, 'nursing'),
 				...addTypeInfo(
-					sleepEntries.map((entry) => ({
+					sleepEntriesWithPhotos.map((entry) => ({
 						...entry,
 						timestamp: entry.startTime // Normalize timestamp field
 					})),
 					'sleep'
 				),
 				...addTypeInfo(
-					medicationEntries.map((entry) => ({
+					medicationEntriesWithPhotos.map((entry) => ({
 						...entry,
 						timestamp: entry.administeredAt // Normalize timestamp field
 					})),
 					'medication'
 				),
 				...addTypeInfo(
-					milestoneEntries.map((entry) => ({
+					milestoneEntriesWithPhotos.map((entry) => ({
 						...entry,
 						timestamp: entry.achievedAt // Normalize timestamp field
 					})),
 					'milestone'
 				),
-				...addTypeInfo(measurementEntries, 'measurement'),
+				...addTypeInfo(measurementEntriesWithPhotos, 'measurement'),
 				...addTypeInfo(photoEntries, 'photo')
 			];
 
@@ -191,6 +228,8 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 						)
 					);
 				totalCount = countResult[0].count;
+				// Add item photos to diaper entries
+				logEntries = await addItemPhotosToEntries(logEntries, 'diaperChange');
 				logEntries = addTypeInfo(logEntries, 'diaper');
 			} else if (type === 'feeding') {
 				logEntries = await db.query.feeding.findMany({
@@ -215,6 +254,8 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 						)
 					);
 				totalCount = countResult[0].count;
+				// Add item photos to feeding entries
+				logEntries = await addItemPhotosToEntries(logEntries, 'feeding');
 				logEntries = addTypeInfo(logEntries, 'feeding');
 			} else if (type === 'nursing') {
 				logEntries = await db.query.nursing.findMany({
@@ -239,6 +280,8 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 						)
 					);
 				totalCount = countResult[0].count;
+				// Add item photos to nursing entries
+				logEntries = await addItemPhotosToEntries(logEntries, 'nursing');
 				logEntries = addTypeInfo(logEntries, 'nursing');
 			} else if (type === 'sleep') {
 				logEntries = await db.query.sleep.findMany({
@@ -263,6 +306,8 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 						)
 					);
 				totalCount = countResult[0].count;
+				// Add item photos to sleep entries
+				logEntries = await addItemPhotosToEntries(logEntries, 'sleep');
 				logEntries = addTypeInfo(
 					logEntries.map((entry) => ({
 						...entry,
@@ -293,6 +338,8 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 						)
 					);
 				totalCount = countResult[0].count;
+				// Add item photos to medication entries
+				logEntries = await addItemPhotosToEntries(logEntries, 'medication');
 				logEntries = addTypeInfo(
 					logEntries.map((entry) => ({
 						...entry,
@@ -323,6 +370,8 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 						)
 					);
 				totalCount = countResult[0].count;
+				// Add item photos to milestone entries
+				logEntries = await addItemPhotosToEntries(logEntries, 'milestone');
 				logEntries = addTypeInfo(
 					logEntries.map((entry) => ({
 						...entry,
@@ -353,6 +402,8 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 						)
 					);
 				totalCount = countResult[0].count;
+				// Add item photos to measurement entries
+				logEntries = await addItemPhotosToEntries(logEntries, 'measurement');
 				logEntries = addTypeInfo(logEntries, 'measurement');
 			} else if (type === 'photo') {
 				logEntries = await db.query.photo.findMany({

@@ -6,6 +6,8 @@
  import { flip } from 'svelte/animate';
  import AddBabyModal from '$lib/components/AddBabyModal.svelte';
  import AddEntryModal from '$lib/components/AddEntryModal.svelte';
+ import LogEntryDetail from '$lib/components/LogEntryDetail.svelte';
+ import PhotoLightbox from '$lib/components/PhotoLightbox.svelte';
  import { calculateAge } from '$lib/utils';
 
 	// Define types for our data
@@ -24,8 +26,43 @@
 		userId: string;
 		timestamp: string;
 		logType: string;
-
-		[key: string]: any; // For additional properties based on log type
+		notes?: string;
+		photoUrl?: string;
+		// Diaper specific
+		type?: 'wet' | 'dirty' | 'both';
+		// Feeding specific
+		amount?: number;
+		foodType?: string;
+		foodDetails?: string;
+		consistency?: string;
+		reaction?: string;
+		// Nursing specific
+		duration?: number;
+		side?: 'left' | 'right' | 'both';
+		// Sleep specific
+		startTime?: string;
+		endTime?: string;
+		quality?: string;
+		location?: string;
+		// Medication specific
+		name?: string;
+		dosage?: string;
+		unit?: string;
+		reason?: string;
+		administeredAt?: string;
+		// Milestone specific
+		category?: string;
+		title?: string;
+		description?: string;
+		achievedAt?: string;
+		// Measurement specific
+		height?: number;
+		weight?: number;
+		headCircumference?: number;
+		temperature?: number;
+		teethCount?: number;
+		measurementType?: string;
+		measurementLocation?: string;
 	}
 
 	interface QRCode {
@@ -59,6 +96,23 @@
 	let totalPages = 1;
 	let logsPerPage = 10;
 	let selectedLogType = 'all';
+
+	// Lightbox state
+	let lightboxOpen = false;
+	let lightboxPhotos: string[] = [];
+	let lightboxCurrentIndex = 0;
+
+	// Function to open the lightbox
+	function openLightbox(photoUrl: string, allPhotos: string[] = []) {
+		lightboxPhotos = allPhotos.length > 0 ? allPhotos : [photoUrl];
+		lightboxCurrentIndex = allPhotos.length > 0 ? allPhotos.indexOf(photoUrl) : 0;
+		lightboxOpen = true;
+	}
+
+	// Function to close the lightbox
+	function closeLightbox() {
+		lightboxOpen = false;
+	}
 
 	// Map for gender icons and colors
 	const genderIcons = {
@@ -612,166 +666,9 @@
 				</div>
 				<!-- Log entries list -->
 			{:else}
-				<div class="bg-white shadow overflow-hidden sm:rounded-lg divide-y divide-gray-200">
+				<div class="grid grid-cols-1 gap-4">
 					{#each logEntries as entry (entry.id)}
-						<div class="px-4 py-4 sm:px-6 hover:bg-gray-50">
-							<div class="flex items-center justify-between">
-								<div class="flex items-center">
-									<!-- Icon based on log type -->
-									<div class="flex-shrink-0 h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center">
-										{#if entry.logType === 'diaper'}
-											<span class="text-xl">🧷</span>
-										{:else if entry.logType === 'feeding'}
-											<span class="text-xl">🍼</span>
-										{:else if entry.logType === 'nursing'}
-											<span class="text-xl">👩‍🍼</span>
-										{:else if entry.logType === 'sleep'}
-											<span class="text-xl">😴</span>
-										{:else if entry.logType === 'medication'}
-											<span class="text-xl">💊</span>
-										{:else if entry.logType === 'milestone'}
-											<span class="text-xl">🏆</span>
-										{:else if entry.logType === 'measurement'}
-											<span class="text-xl">📏</span>
-										{:else if entry.logType === 'photo'}
-											<span class="text-xl">📷</span>
-										{:else}
-											<span class="text-xl">📝</span>
-										{/if}
-									</div>
-									<div class="ml-4">
-										<!-- Log type title -->
-										<h4 class="text-lg font-medium text-gray-900">
-											{#if entry.logType === 'diaper'}
-												Windel gewechselt
-											{:else if entry.logType === 'feeding'}
-												Fütterung
-											{:else if entry.logType === 'nursing'}
-												Stillen
-											{:else if entry.logType === 'sleep'}
-												Schlaf
-											{:else if entry.logType === 'medication'}
-												Medikament: {entry.name}
-											{:else if entry.logType === 'milestone'}
-												Meilenstein: {entry.title}
-											{:else if entry.logType === 'measurement'}
-												Messung
-											{:else if entry.logType === 'photo'}
-												Foto
-											{:else}
-												Protokolleintrag
-											{/if}
-										</h4>
-										<!-- Log details based on type -->
-										<div class="mt-1">
-											{#if entry.logType === 'diaper'}
-												<p class="text-sm text-gray-500">
-													Typ: {entry.type === 'wet' ? 'Nass' : entry.type === 'dirty' ? 'Schmutzig' : 'Beides'}
-													{#if entry.notes}
-														· Notizen: {entry.notes}
-													{/if}
-												</p>
-											{:else if entry.logType === 'feeding'}
-												<p class="text-sm text-gray-500">
-													Typ: {entry.type === 'bottle' ? 'Flasche' : entry.type === 'nursing' ? 'Stillen' : 'Feste Nahrung'}
-													{#if entry.amount}
-														· Menge: {entry.amount} ml
-													{/if}
-													{#if entry.foodType}
-														· Nahrung: {entry.foodType}
-													{/if}
-													{#if entry.notes}
-														· Notizen: {entry.notes}
-													{/if}
-												</p>
-											{:else if entry.logType === 'nursing'}
-												<p class="text-sm text-gray-500">
-													Dauer: {entry.duration} Minuten ·
-													Seite: {entry.side === 'left' ? 'Links' : entry.side === 'right' ? 'Rechts' : 'Beide'}
-													{#if entry.notes}
-														· Notizen: {entry.notes}
-													{/if}
-												</p>
-											{:else if entry.logType === 'sleep'}
-												<p class="text-sm text-gray-500">
-													{#if entry.duration}
-														Dauer: {entry.duration} Minuten
-													{:else if entry.startTime && entry.endTime}
-														Von: {new Date(entry.startTime).toLocaleTimeString('de-DE', {
-														hour: '2-digit',
-														minute: '2-digit'
-													})}
-														Bis: {new Date(entry.endTime).toLocaleTimeString('de-DE', {
-														hour: '2-digit',
-														minute: '2-digit'
-													})}
-													{/if}
-													{#if entry.quality}
-														· Qualität: {entry.quality}
-													{/if}
-													{#if entry.notes}
-														· Notizen: {entry.notes}
-													{/if}
-												</p>
-											{:else if entry.logType === 'medication'}
-												<p class="text-sm text-gray-500">
-													Dosis: {entry.dosage} {entry.unit}
-													{#if entry.reason}
-														· Grund: {entry.reason}
-													{/if}
-													{#if entry.notes}
-														· Notizen: {entry.notes}
-													{/if}
-												</p>
-											{:else if entry.logType === 'milestone'}
-												<p class="text-sm text-gray-500">
-													Kategorie: {entry.category}
-													{#if entry.description}
-														· {entry.description}
-													{/if}
-												</p>
-											{:else if entry.logType === 'measurement'}
-												<p class="text-sm text-gray-500">
-													{#if entry.height}
-														Größe: {entry.height} cm
-													{/if}
-													{#if entry.weight}
-														{#if entry.height} ·{/if}
-														Gewicht: {entry.weight} kg
-													{/if}
-													{#if entry.headCircumference}
-														{#if entry.height || entry.weight} ·{/if}
-														Kopfumfang: {entry.headCircumference} cm
-													{/if}
-													{#if entry.notes}
-														· Notizen: {entry.notes}
-													{/if}
-												</p>
-											{:else if entry.logType === 'photo'}
-												<p class="text-sm text-gray-500">
-													{#if entry.notes}
-														Notizen: {entry.notes}
-													{:else}
-														Foto aufgenommen
-													{/if}
-												</p>
-											{/if}
-										</div>
-									</div>
-								</div>
-								<div class="text-right">
-									<p class="text-sm text-gray-500">
-										{new Date(entry.timestamp).toLocaleDateString('de-DE', {
-											year: 'numeric',
-											month: 'long',
-											day: 'numeric',
-											hour: '2-digit',
-											minute: '2-digit'
-										})}
-									</p>
-								</div>
-							</div>
-						</div>
+						<LogEntryDetail {entry} onPhotoClick={openLightbox} />
 					{/each}
 				</div>
 
@@ -831,7 +728,7 @@
 									</button>
 
 									<!-- Page numbers -->
-									{#each Array(Math.min(5, totalPages)) as _, i}
+									{#each Array.from({ length: Math.min(5, totalPages) }, (_, i) => i) as i (i)}
 										{@const pageNum = currentPage <= 3
 											? i + 1
 											: currentPage >= totalPages - 2
@@ -908,6 +805,14 @@
 	on:cancel={() => showAddEntryModal = false}
 	on:close={() => showAddEntryModal = false}
 	on:error={(e) => error = e.detail}
+/>
+
+<!-- Photo Lightbox -->
+<PhotoLightbox 
+  photos={lightboxPhotos} 
+  currentIndex={lightboxCurrentIndex} 
+  isOpen={lightboxOpen} 
+  on:close={closeLightbox} 
 />
 
 <!-- QR Code Modal -->
