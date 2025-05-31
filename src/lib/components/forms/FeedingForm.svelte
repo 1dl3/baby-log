@@ -5,11 +5,37 @@
   export let baby: { id: string; name: string } | null = null;
   export let error: string = '';
   export let success: boolean = false;
+  export let entry: {
+    id?: string;
+    babyId?: string;
+    userId?: string;
+    timestamp?: string;
+    logType?: string;
+    notes?: string;
+    type?: string;
+    amount?: number;
+    foodType?: string;
+    foodDetails?: string;
+    consistency?: string;
+    reaction?: string;
+    duration?: number;
+    [key: string]: string | number | boolean | undefined;
+  } | null = null; // Accept entry data for editing
 
   const dispatch = createEventDispatcher();
 
   // Feeding-specific form data
-  let formData = {
+  let formData = entry ? {
+    notes: entry.notes || '',
+    feedingType: entry.type || 'bottle',
+    amount: entry.amount || 0,
+    duration: entry.duration || 0,
+    foodType: entry.foodType || '',
+    foodDetails: entry.foodDetails || '',
+    consistency: entry.consistency || '',
+    reaction: entry.reaction || '',
+    timestamp: entry.timestamp ? new Date(entry.timestamp).toISOString().slice(0, 16) : new Date().toISOString().slice(0, 16)
+  } : {
     notes: '',
     feedingType: 'bottle',
     amount: 0,

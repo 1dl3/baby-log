@@ -5,11 +5,37 @@
   export let baby: { id: string; name: string } | null = null;
   export let error: string = '';
   export let success: boolean = false;
+  export let entry: {
+    id?: string;
+    babyId?: string;
+    userId?: string;
+    timestamp?: string;
+    logType?: string;
+    notes?: string;
+    height?: number;
+    weight?: number;
+    headCircumference?: number;
+    temperature?: number;
+    teethCount?: number;
+    measurementType?: string;
+    measurementLocation?: string;
+    [key: string]: string | number | boolean | undefined;
+  } | null = null; // Accept entry data for editing
 
   const dispatch = createEventDispatcher();
 
   // Measurement-specific form data
-  let formData = {
+  let formData = entry ? {
+    notes: entry.notes || '',
+    height: entry.height || 0,
+    weight: entry.weight || 0,
+    headCircumference: entry.headCircumference || 0,
+    temperature: entry.temperature || 0,
+    teethCount: entry.teethCount || 0,
+    measurementType: entry.measurementType || 'routine',
+    measurementLocation: entry.measurementLocation || 'home',
+    timestamp: entry.timestamp ? new Date(entry.timestamp).toISOString().slice(0, 16) : new Date().toISOString().slice(0, 16)
+  } : {
     notes: '',
     height: 0,
     weight: 0,

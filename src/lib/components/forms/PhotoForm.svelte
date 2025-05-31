@@ -5,14 +5,24 @@
   export let baby: { id: string; name: string } | null = null;
   export let error: string = '';
   export let success: boolean = false;
+  export let entry: {
+    id?: string;
+    babyId?: string;
+    userId?: string;
+    timestamp?: string;
+    logType?: string;
+    notes?: string;
+    photoUrl?: string;
+    [key: string]: string | number | boolean | undefined;
+  } | null = null; // Accept entry data for editing
 
   const dispatch = createEventDispatcher();
 
   // Photo-specific form data
   let formData = {
-    notes: '',
+    notes: entry?.notes || '',
     photos: [] as File[],
-    timestamp: new Date().toISOString().slice(0, 16)
+    timestamp: entry?.timestamp ? new Date(entry.timestamp).toISOString().slice(0, 16) : new Date().toISOString().slice(0, 16)
   };
 
   function handlePhotoChange(event: Event) {

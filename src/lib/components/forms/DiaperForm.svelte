@@ -5,11 +5,25 @@
   export let baby: { id: string; name: string } | null = null;
   export let error: string = '';
   export let success: boolean = false;
+  export let entry: {
+    id?: string;
+    babyId?: string;
+    userId?: string;
+    timestamp?: string;
+    logType?: string;
+    notes?: string;
+    type?: string;
+    [key: string]: string | number | boolean | undefined;
+  } | null = null; // Accept entry data for editing
 
   const dispatch = createEventDispatcher();
 
   // Diaper-specific form data
-  let formData = {
+  let formData = entry ? {
+    notes: entry.notes || '',
+    diaperType: entry.type || 'both',
+    timestamp: entry.timestamp ? new Date(entry.timestamp).toISOString().slice(0, 16) : new Date().toISOString().slice(0, 16)
+  } : {
     notes: '',
     diaperType: 'both',
     timestamp: new Date().toISOString().slice(0, 16)

@@ -5,11 +5,31 @@
   export let baby: { id: string; name: string } | null = null;
   export let error: string = '';
   export let success: boolean = false;
+  export let entry: {
+    id?: string;
+    babyId?: string;
+    userId?: string;
+    timestamp?: string;
+    logType?: string;
+    notes?: string;
+    category?: string;
+    title?: string;
+    description?: string;
+    achievedAt?: string;
+    [key: string]: string | number | boolean | undefined;
+  } | null = null; // Accept entry data for editing
 
   const dispatch = createEventDispatcher();
 
   // Milestone-specific form data
-  let formData = {
+  let formData = entry ? {
+    notes: entry.notes || '',
+    category: entry.category || 'motor',
+    title: entry.title || '',
+    description: entry.description || '',
+    achievedAt: entry.achievedAt ? new Date(entry.achievedAt).toISOString().slice(0, 16) : new Date().toISOString().slice(0, 16),
+    timestamp: entry.timestamp ? new Date(entry.timestamp).toISOString().slice(0, 16) : new Date().toISOString().slice(0, 16)
+  } : {
     notes: '',
     category: 'motor',
     title: '',

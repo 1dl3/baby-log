@@ -374,6 +374,9 @@
 			showAddEntryModal = false;
 		} catch {
 			error = 'Fehler beim Hinzufügen des Eintrags';
+			window.setTimeout(()=>{
+				error = '';
+			},5000)
 		} finally {
 			addingEntry = false;
 		}

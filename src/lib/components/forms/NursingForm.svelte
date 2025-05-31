@@ -5,11 +5,27 @@
   export let baby: { id: string; name: string } | null = null;
   export let error: string = '';
   export let success: boolean = false;
+  export let entry: {
+    id?: string;
+    babyId?: string;
+    userId?: string;
+    timestamp?: string;
+    logType?: string;
+    notes?: string;
+    duration?: number;
+    side?: string;
+    [key: string]: string | number | boolean | undefined;
+  } | null = null; // Accept entry data for editing
 
   const dispatch = createEventDispatcher();
 
   // Nursing-specific form data
-  let formData = {
+  let formData = entry ? {
+    notes: entry.notes || '',
+    duration: entry.duration || 0,
+    side: entry.side || 'both',
+    timestamp: entry.timestamp ? new Date(entry.timestamp).toISOString().slice(0, 16) : new Date().toISOString().slice(0, 16)
+  } : {
     notes: '',
     duration: 0,
     side: 'both',

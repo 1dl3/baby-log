@@ -5,11 +5,33 @@
   export let baby: { id: string; name: string } | null = null;
   export let error: string = '';
   export let success: boolean = false;
+  export let entry: {
+    id?: string;
+    babyId?: string;
+    userId?: string;
+    timestamp?: string;
+    logType?: string;
+    notes?: string;
+    name?: string;
+    dosage?: string;
+    unit?: string;
+    reason?: string;
+    administeredAt?: string;
+    [key: string]: string | number | boolean | undefined;
+  } | null = null; // Accept entry data for editing
 
   const dispatch = createEventDispatcher();
 
   // Medication-specific form data
-  let formData = {
+  let formData = entry ? {
+    notes: entry.notes || '',
+    medicationName: entry.name || '',
+    dosage: entry.dosage || '',
+    unit: entry.unit || 'ml',
+    reason: entry.reason || '',
+    administeredAt: entry.administeredAt ? new Date(entry.administeredAt).toISOString().slice(0, 16) : new Date().toISOString().slice(0, 16),
+    timestamp: entry.timestamp ? new Date(entry.timestamp).toISOString().slice(0, 16) : new Date().toISOString().slice(0, 16)
+  } : {
     notes: '',
     medicationName: '',
     dosage: '',
