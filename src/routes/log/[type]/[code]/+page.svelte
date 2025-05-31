@@ -81,6 +81,10 @@
   function handleError(event: CustomEvent) {
     error = event.detail;
   }
+
+  function resetSuccess() {
+    success = false;
+  }
 </script>
 
 <div class="min-h-screen bg-gray-100 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
@@ -158,7 +162,14 @@
                   <button
                     type="button"
                     class="ml-3 bg-green-50 px-2 py-1.5 rounded-md text-sm font-medium text-green-800 hover:bg-green-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
-                    on:click={() => success = false}
+                    on:click={() => {
+                      success = false;
+                      formData = {
+                        ...formData,
+                        notes: '',
+                        timestamp: new Date().toISOString().slice(0, 16)
+                      };
+                    }}
                   >
                     Add another log
                   </button>

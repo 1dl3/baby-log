@@ -35,7 +35,7 @@
   }
 </script>
 
-<BaseForm {baby} type="photo" {error} {success} {formData} on:submit={handleSubmit} on:cancel={handleCancel}>
+<BaseForm {baby} type="photo" {error} {success} {formData} enablePhotoUpload={false} on:submit={handleSubmit} on:cancel={handleCancel}>
   <div>
     <label for="photo" class="block text-sm font-medium text-gray-700">
       Photo
@@ -54,7 +54,7 @@
       Upload a photo of your baby
     </p>
   </div>
-  
+
   <div>
     <label for="timestamp" class="block text-sm font-medium text-gray-700">
       Date & Time

@@ -54,7 +54,7 @@
   }
 </script>
 
-<BaseForm {baby} type="photos" {error} {success} {formData} on:submit={handleSubmit} on:cancel={handleCancel}>
+<BaseForm {baby} type="photos" {error} {success} {formData} enablePhotoUpload={false} on:submit={handleSubmit} on:cancel={handleCancel}>
   <div>
     <label for="photos" class="block text-sm font-medium text-gray-700">
       Photos
@@ -74,7 +74,7 @@
       Upload multiple photos (hold Ctrl/Cmd to select multiple files)
     </p>
   </div>
-  
+
   <div>
     <label for="itemId" class="block text-sm font-medium text-gray-700">
       Item ID
@@ -88,7 +88,7 @@
       />
     </div>
   </div>
-  
+
   <div>
     <label for="itemType" class="block text-sm font-medium text-gray-700">
       Item Type
@@ -109,7 +109,7 @@
       </select>
     </div>
   </div>
-  
+
   <div>
     <label for="timestamp" class="block text-sm font-medium text-gray-700">
       Date & Time

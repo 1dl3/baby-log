@@ -5,6 +5,7 @@
   export let type: string;
   export let error: string = '';
   export let success: boolean = false;
+  export let enablePhotoUpload: boolean = true;
 
   const dispatch = createEventDispatcher();
 
@@ -16,13 +17,52 @@
 
   // Function to handle form submission - can be overridden by specific forms
   export function handleSubmit() {
-    dispatch('submit', { formData, type, babyId: baby?.id });
+    const photoInput = document.getElementById('photo') as HTMLInputElement;
+
+    // Check if photo upload is enabled and a file is selected
+    if (enablePhotoUpload && photoInput && photoInput.files && photoInput.files.length > 0) {
+      // Create FormData for file upload
+      const formDataObj = new FormData();
+      formDataObj.append('photo', photoInput.files[0]);
+      formDataObj.append('babyId', baby?.id || '');
+
+      // Add all other form data fields
+      for (const [key, value] of Object.entries(formData)) {
+        formDataObj.append(key, value.toString());
+      }
+
+      dispatch('submit', { formData: formDataObj, type, babyId: baby?.id, isFormData: true });
+    } else {
+      // Regular JSON submission
+      dispatch('submit', { formData, type, babyId: baby?.id });
+    }
   }
 </script>
 
 <form class="space-y-6" on:submit|preventDefault={handleSubmit}>
   <slot></slot>
-  
+
+  {#if enablePhotoUpload}
+  <!-- Photo upload field -->
+  <div>
+    <label for="photo" class="block text-sm font-medium text-gray-700">
+      Photo (Optional)
+    </label>
+    <div class="mt-1">
+      <input
+        type="file"
+        id="photo"
+        name="photo"
+        accept="image/*"
+        class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
+      />
+    </div>
+    <p class="mt-2 text-sm text-gray-500">
+      Upload a photo related to this entry
+    </p>
+  </div>
+  {/if}
+
   <!-- Common notes field that most forms have -->
   <div>
     <label for="notes" class="block text-sm font-medium text-gray-700">

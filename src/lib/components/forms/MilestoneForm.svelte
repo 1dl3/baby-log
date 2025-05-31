@@ -97,18 +97,4 @@
     </div>
   </div>
 
-  <div>
-    <label for="photo" class="block text-sm font-medium text-gray-700">
-      Photo (Optional)
-    </label>
-    <div class="mt-1">
-      <input
-        type="file"
-        id="photo"
-        name="photo"
-        accept="image/*"
-        class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md"
-      />
-    </div>
-  </div>
 </BaseForm>
