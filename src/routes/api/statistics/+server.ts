@@ -1,7 +1,14 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { db } from '$lib/server/db';
-import { diaperChange, feeding, medication, milestone, nursing, sleep } from '$lib/server/db/schema';
+import {
+	diaperChange,
+	feeding,
+	medication,
+	milestone,
+	nursing,
+	sleep
+} from '$lib/server/db/schema';
 import { and, eq, gte, lte } from 'drizzle-orm';
 
 // Get diaper statistics for a baby
@@ -23,7 +30,7 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 		let stats;
 		const start = startDate ? new Date(startDate) : new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
 		const end = endDate ? new Date(endDate) : new Date();
-
+		let key = 'timestamp';
 		switch (type) {
 			case 'diaper':
 				stats = await db.query.diaperChange.findMany({
@@ -59,6 +66,7 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 				break;
 
 			case 'milestone':
+				key = 'achievedAt';
 				stats = await db.query.milestone.findMany({
 					where: and(
 						eq(milestone.babyId, babyId),
@@ -70,6 +78,8 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 				break;
 
 			case 'sleep':
+				key = 'startTime';
+
 				stats = await db.query.sleep.findMany({
 					where: and(
 						eq(sleep.babyId, babyId),
@@ -80,6 +90,7 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 				});
 				break;
 			case 'medication':
+				key = 'administeredAt';
 				stats = await db.query.medication.findMany({
 					where: and(
 						eq(medication.babyId, babyId),
@@ -95,7 +106,7 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 
 		// Group stats by date
 		const groupedStats = stats.reduce((acc: any, curr: any) => {
-			const date = new Date(curr.timestamp).toISOString().split('T')[0];
+			const date = new Date(curr[key]).toISOString().split('T')[0];
 			if (!acc[date]) {
 				acc[date] = {
 					count: 0,
