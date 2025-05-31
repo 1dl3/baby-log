@@ -334,29 +334,21 @@
 		error = '';
 
 		try {
-			const { formData, type, isFormData } = event.detail;
+			const { formData, type } = event.detail;
 			const endpoint = `/api/baby-log/${type}`;
 			let response;
 
-			if (isFormData) {
-				// Handle FormData submissions (photos)
-				response = await fetch(endpoint, {
-					method: 'POST',
-					body: formData
-				});
-			} else {
-				// Handle JSON submissions
-				response = await fetch(endpoint, {
-					method: 'POST',
-					headers: {
-						'Content-Type': 'application/json'
-					},
-					body: JSON.stringify({
-						babyId: selectedBaby.id,
-						...formData
-					})
-				});
-			}
+			// All submissions are now JSON
+			response = await fetch(endpoint, {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify({
+					babyId: selectedBaby.id,
+					...formData
+				})
+			});
 
 			if (!response.ok) throw new Error('Failed to add entry');
 
