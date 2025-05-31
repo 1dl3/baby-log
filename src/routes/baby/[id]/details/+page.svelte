@@ -503,38 +503,36 @@
 	}
 </script>
 
-<main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-	<!-- Page header -->
-	<div class="md:flex md:items-center md:justify-between mb-8">
-		<div class="flex-1 min-w-0">
-			<h1 class="text-3xl font-bold leading-tight text-gray-900 sm:text-4xl">
+<main class="min-h-screen bg-gradient-to-b from-indigo-50 to-white px-4 sm:px-6 lg:px-8 py-8">
+	<div class="max-w-7xl mx-auto">
+		<!-- Page header -->
+		<div class="md:flex md:items-center md:justify-between mb-8">
+			<div class="flex-1 min-w-0">
+				<h1 class="text-3xl font-bold leading-tight text-gray-900 sm:text-4xl">
+					{#if baby}
+						{baby.name}
+					{:else}
+						Baby Details
+					{/if}
+				</h1>
 				{#if baby}
-					{baby.name}
-				{:else}
-					Baby Details
+					<p class="mt-1 text-sm text-gray-500">
+						{formatDate(baby.birthDate)} · {calculateAge(baby.birthDate)}
+					</p>
 				{/if}
-			</h1>
-			{#if baby}
-				<p class="mt-1 text-sm text-gray-500">
-					{formatDate(baby.birthDate)} · {calculateAge(baby.birthDate)}
-				</p>
-			{/if}
+			</div>
+			<div class="mt-4 flex md:mt-0 md:ml-4">
+				<a
+					href="/dashboard"
+					class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
+				>
+					<svg class="h-5 w-5 mr-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+						<path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd" />
+					</svg>
+					Zurück zum Dashboard
+				</a>
+			</div>
 		</div>
-		<div class="mt-4 flex md:mt-0 md:ml-4">
-			<a
-				href="/dashboard"
-				class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-			>
-				<svg class="-ml-1 mr-2 h-5 w-5 text-gray-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"
-						 fill="currentColor">
-					<path fill-rule="evenodd"
-								d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z"
-								clip-rule="evenodd" />
-				</svg>
-				Zurück zum Dashboard
-			</a>
-		</div>
-	</div>
 
 	<!-- Success message -->
 	{#if showSuccessMessage}
@@ -602,22 +600,22 @@
 	{:else}
 		<!-- Tabs -->
 		<div class="border-b border-gray-200 mb-6">
-			<nav class="-mb-px flex space-x-8" aria-label="Tabs">
+			<nav class="-mb-px flex flex-wrap sm:flex-nowrap" aria-label="Tabs">
 				<button
 					on:click={() => (activeTab = 'settings')}
 					class={`${
             activeTab === 'settings'
               ? 'border-indigo-500 text-indigo-600'
               : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-          } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+          } whitespace-nowrap py-3 sm:py-4 px-3 sm:px-4 border-b-2 font-medium text-sm flex-grow sm:flex-grow-0 sm:mr-6 flex justify-center sm:justify-start items-center`}
 				>
-					<svg class="-ml-0.5 mr-2 h-5 w-5 inline-block" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"
+					<svg class="-ml-0.5 mr-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"
 							 fill="currentColor">
 						<path fill-rule="evenodd"
 									d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z"
 									clip-rule="evenodd" />
 					</svg>
-					Einstellungen
+					<span>Einstellungen</span>
 				</button>
 				<button
 					on:click={() => (activeTab = 'statistics')}
@@ -625,14 +623,14 @@
             activeTab === 'statistics'
               ? 'border-indigo-500 text-indigo-600'
               : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-          } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+          } whitespace-nowrap py-3 sm:py-4 px-3 sm:px-4 border-b-2 font-medium text-sm flex-grow sm:flex-grow-0 sm:mr-6 flex justify-center sm:justify-start items-center`}
 				>
-					<svg class="-ml-0.5 mr-2 h-5 w-5 inline-block" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"
+					<svg class="-ml-0.5 mr-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"
 							 fill="currentColor">
 						<path
 							d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z" />
 					</svg>
-					Statistiken
+					<span>Statistiken</span>
 				</button>
 				<button
 					on:click={() => (activeTab = 'qrcodes')}
@@ -640,9 +638,9 @@
             activeTab === 'qrcodes'
               ? 'border-indigo-500 text-indigo-600'
               : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-          } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+          } whitespace-nowrap py-3 sm:py-4 px-3 sm:px-4 border-b-2 font-medium text-sm flex-grow sm:flex-grow-0 sm:mr-6 flex justify-center sm:justify-start items-center`}
 				>
-					<svg class="-ml-0.5 mr-2 h-5 w-5 inline-block" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"
+					<svg class="-ml-0.5 mr-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"
 							 fill="currentColor">
 						<path fill-rule="evenodd"
 									d="M3 4a1 1 0 011-1h3a1 1 0 011 1v3a1 1 0 01-1 1H4a1 1 0 01-1-1V4zm2 2V5h1v1H5zM3 13a1 1 0 011-1h3a1 1 0 011 1v3a1 1 0 01-1 1H4a1 1 0 01-1-1v-3zm2 2v-1h1v1H5zM13 3a1 1 0 00-1 1v3a1 1 0 001 1h3a1 1 0 001-1V4a1 1 0 00-1-1h-3zm1 2v1h1V5h-1z"
@@ -650,7 +648,7 @@
 						<path
 							d="M11 4a1 1 0 10-2 0v1a1 1 0 002 0V4zM10 7a1 1 0 011 1v1h2a1 1 0 110 2h-3a1 1 0 01-1-1V8a1 1 0 011-1zM16 9a1 1 0 100 2 1 1 0 000-2zM9 13a1 1 0 011-1h1a1 1 0 110 2v2a1 1 0 11-2 0v-3zM7 11a1 1 0 100-2H4a1 1 0 100 2h3zM17 13a1 1 0 01-1 1h-2a1 1 0 110-2h2a1 1 0 011 1zM16 17a1 1 0 100-2h-3a1 1 0 100 2h3z" />
 					</svg>
-					QR-Codes
+					<span>QR-Codes</span>
 				</button>
 				<button
 					on:click={() => (activeTab = 'sharing')}
@@ -658,14 +656,14 @@
             activeTab === 'sharing'
               ? 'border-indigo-500 text-indigo-600'
               : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-          } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+          } whitespace-nowrap py-3 sm:py-4 px-3 sm:px-4 border-b-2 font-medium text-sm flex-grow sm:flex-grow-0 flex justify-center sm:justify-start items-center`}
 				>
-					<svg class="-ml-0.5 mr-2 h-5 w-5 inline-block" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"
+					<svg class="-ml-0.5 mr-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"
 							 fill="currentColor">
 						<path
 							d="M15 8a3 3 0 10-2.977-2.63l-4.94 2.47a3 3 0 100 4.319l4.94 2.47a3 3 0 10.895-1.789l-4.94-2.47a3.027 3.027 0 000-.74l4.94-2.47C13.456 7.68 14.19 8 15 8z" />
 					</svg>
-					Teilen
+					<span>Teilen</span>
 				</button>
 			</nav>
 		</div>
@@ -731,39 +729,51 @@
 							</div>
 							<div>
 								<label for="photo" class="block text-sm font-medium text-gray-700">Foto</label>
-								<div class="mt-1 flex items-center space-x-4">
-									{#if photoPreview}
-										<div class="relative w-24 h-24 rounded-full overflow-hidden bg-gray-100">
-											<img src={photoPreview} alt="Vorschau" class="w-full h-full object-cover" />
+								<div class="mt-2 flex flex-col md:flex-row items-start md:items-center space-y-4 md:space-y-0 md:space-x-4">
+									<div class="flex-shrink-0">
+										{#if photoPreview}
+											<div class="relative w-24 h-24 rounded-full overflow-hidden bg-gray-100 shadow-sm">
+												<img src={photoPreview} alt="Vorschau" class="w-full h-full object-cover" />
+											</div>
+										{:else if baby?.photoUrl}
+											<div class="relative w-24 h-24 rounded-full overflow-hidden bg-gray-100 shadow-sm">
+												<img src={baby.photoUrl} alt={baby.name} class="w-full h-full object-cover" />
+											</div>
+										{:else}
+											<div class="w-24 h-24 rounded-full bg-gray-100 flex items-center justify-center shadow-sm">
+												<svg class="h-12 w-12 text-gray-300" fill="currentColor" viewBox="0 0 24 24">
+													<path
+														d="M24 20.993V24H0v-2.996A14.977 14.977 0 0112.004 15c4.904 0 9.26 2.354 11.996 5.993zM16.002 8.999a4 4 0 11-8 0 4 4 0 018 0z" />
+												</svg>
+											</div>
+										{/if}
+									</div>
+									<div class="flex-grow w-full">
+										<div class="flex items-center justify-center w-full">
+											<label for="photo" class="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-white hover:bg-gray-50 transition-colors">
+												<div class="flex flex-col items-center justify-center pt-5 pb-6">
+													<svg class="w-8 h-8 mb-3 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+														<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+													</svg>
+													<p class="mb-2 text-sm text-gray-500"><span class="font-semibold">Klicke zum Hochladen</span> oder ziehe eine Datei hierher</p>
+													<p class="text-xs text-gray-500">PNG, JPG oder JPEG (max. 10MB)</p>
+												</div>
+												<input
+													id="photo"
+													type="file"
+													accept="image/*"
+													on:change={handlePhotoChange}
+													class="hidden"
+												/>
+											</label>
 										</div>
-									{:else if baby?.photoUrl}
-										<div class="relative w-24 h-24 rounded-full overflow-hidden bg-gray-100">
-											<img src={baby.photoUrl} alt={baby.name} class="w-full h-full object-cover" />
-										</div>
-									{:else}
-										<div class="w-24 h-24 rounded-full bg-gray-100 flex items-center justify-center">
-											<svg class="h-12 w-12 text-gray-300" fill="currentColor" viewBox="0 0 24 24">
-												<path
-													d="M24 20.993V24H0v-2.996A14.977 14.977 0 0112.004 15c4.904 0 9.26 2.354 11.996 5.993zM16.002 8.999a4 4 0 11-8 0 4 4 0 018 0z" />
-											</svg>
-										</div>
-									{/if}
-									<div>
-										<input
-											id="photo"
-											type="file"
-											accept="image/*"
-											on:change={handlePhotoChange}
-											class="sr-only"
-										/>
-										<label
-											for="photo"
-											class="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 cursor-pointer"
-										>
-											{photoPreview || baby?.photoUrl ? 'Foto ändern' : 'Foto hochladen'}
-										</label>
 										{#if photoFile}
-											<p class="mt-1 text-xs text-gray-500">{photoFile.name}</p>
+											<div class="mt-2 flex items-center text-sm text-gray-500">
+												<svg class="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+													<path fill-rule="evenodd" d="M8 4a3 3 0 00-3 3v4a3 3 0 006 0V7a1 1 0 112 0v4a5 5 0 01-10 0V7a5 5 0 0110 0v1.5a1.5 1.5 0 01-3 0V7a1 1 0 012 0v1.5a.5.5 0 001 0V7a3 3 0 00-3-3z" clip-rule="evenodd" />
+												</svg>
+												{photoFile.name}
+											</div>
 										{/if}
 									</div>
 								</div>
@@ -1380,6 +1390,7 @@
 			</div>
 		{/if}
 	{/if}
+	</div>
 </main>
 <!-- QR Code Modal -->
 {#if showQrModal}

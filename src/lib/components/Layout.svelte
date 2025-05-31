@@ -90,7 +90,7 @@
 			<div class="flex justify-between h-16">
 				<div class="flex">
 					<div class="flex-shrink-0 flex items-center">
-						<a href="/" class="text-2xl font-bold text-indigo-600">Baby-Protokoll</a>
+						<a href="/" class="text-2xl font-bold text-indigo-600">Baby Log</a>
 					</div>
 					{#if $user}
 						<nav class="hidden sm:ml-6 sm:flex sm:space-x-8">
@@ -171,16 +171,16 @@
 							Dashboard
 						</a>
 						<a
-							href="/log"
+							href="/statistics"
 							class="border-transparent text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800 block pl-3 pr-4 py-2 border-l-4 text-base font-medium {page.url.pathname.startsWith('/log') ? 'bg-indigo-50 border-indigo-500 text-indigo-700' : ''}"
 						>
-							Aktivitäten
+							Statistiken
 						</a>
 						<a
-							href="/statistics"
+							href="/settings"
 							class="border-transparent text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800 block pl-3 pr-4 py-2 border-l-4 text-base font-medium {page.url.pathname.startsWith('/statistics') ? 'bg-indigo-50 border-indigo-500 text-indigo-700' : ''}"
 						>
-							Statistiken
+							Einstellungen
 						</a>
 						<button
 							on:click={logout}
@@ -248,7 +248,7 @@
 		<div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8 border-t border-gray-200">
 			<div class="flex justify-between items-center">
 				<p class="text-sm text-gray-500">
-					&copy; {new Date().getFullYear()} Baby-Protokoll. Alle Rechte vorbehalten.
+					&copy; {new Date().getFullYear()} Baby Log. Alle Rechte vorbehalten.
 				</p>
 				<div class="text-right">
 					<UserInfo />

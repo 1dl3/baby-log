@@ -510,29 +510,6 @@
 		</div>
 	{/if}
 
-	<!-- Log entries section -->
-	<div class="mt-12">
-		<div class="border-b border-gray-200 pb-5 mb-6">
-			<h2 class="text-2xl font-bold leading-tight text-gray-900">Protokolleinträge</h2>
-			<p class="mt-1 text-sm text-gray-500">Wähle ein Baby aus, um dessen Protokolleinträge anzuzeigen.</p>
-		</div>
-
-		<!-- Baby selection dropdown -->
-		<div class="mb-6 flex flex-wrap items-center gap-2">
-			<span class="text-sm font-medium text-gray-700">Baby auswählen:</span>
-			<select
-				bind:value={selectedBaby}
-				on:change={() => { currentPage = 1; fetchLogEntries(); }}
-				class="mt-1 block pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
-			>
-				<option value={null} disabled>Bitte wähle ein Baby</option>
-				{#each babies as baby (baby.id)}
-					<option value={baby}>{baby.name}</option>
-				{/each}
-			</select>
-		</div>
-	</div>
-
 	{#if selectedBaby}
 		<div class="mt-6">
 			<div class="border-b border-gray-200 pb-5 mb-6">
@@ -1005,7 +982,7 @@
 								type="text"
 								bind:value={shareLink}
 								required
-								placeholder="z.B. https://baby-protokoll.de/baby/share/abc123 oder abc123"
+								placeholder="z.B. https://Baby Log.de/baby/share/abc123 oder abc123"
 								class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
 							/>
 							<p class="mt-1 text-xs text-gray-500">

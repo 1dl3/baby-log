@@ -173,7 +173,7 @@
 	<!-- Logged-in user view with baby logs -->
 	<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 		<div class="mb-6">
-			<h1 class="text-2xl font-bold text-gray-900">Baby-Protokoll</h1>
+			<h1 class="text-2xl font-bold text-gray-900">Baby Log</h1>
 			<p class="text-sm text-gray-500">Übersicht der Aktivitäten</p>
 		</div>
 
@@ -428,7 +428,7 @@
 			<div class="max-w-7xl mx-auto">
 				<div class="text-center">
 					<h1 class="text-4xl tracking-tight font-extrabold text-indigo-900 sm:text-5xl md:text-6xl">
-						<span class="block">Baby-Protokoll</span>
+						<span class="block">Baby Log</span>
 						<span class="block text-indigo-600 mt-2">Einfach. Sicher. Übersichtlich.</span>
 					</h1>
 					<p class="mt-3 max-w-md mx-auto text-base text-gray-600 sm:text-lg md:mt-5 md:text-xl md:max-w-3xl">
