@@ -23,11 +23,11 @@
   }
 
   function removePhoto(index: number) {
-    formData.photos = formData.photos.filter((_, i) => i !== index);
+    formData.photos = formData.photos?.filter((_, i) => i !== index);
   }
 
   function handleSubmit() {
-    if (formData.photos.length === 0) {
+    if (formData.photos?.length === 0) {
       dispatch('error', 'Please select at least one photo to upload');
       return;
     }
@@ -41,7 +41,7 @@
     }
 
     const formDataObj = new FormData();
-    formData.photos.forEach(photo => {
+    formData.photos?.forEach(photo => {
       formDataObj.append('photos', photo);
     });
     formDataObj.append('itemId', itemIdInput.value);
@@ -83,7 +83,7 @@
   <!-- Photo previews -->
   {#if formData.photos?.length > 0}
     <div class="mt-4">
-      <h4 class="text-sm font-medium text-gray-700 mb-2">Selected Photos ({formData.photos.length}):</h4>
+      <h4 class="text-sm font-medium text-gray-700 mb-2">Selected Photos ({formData.photos?.length}):</h4>
       <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
         {#each formData.photos as photo, index (photo.name + index)}
           <div class="relative">
