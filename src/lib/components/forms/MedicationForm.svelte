@@ -41,9 +41,7 @@
     timestamp: new Date().toISOString().slice(0, 16)
   };
 
-  function handleSubmit() {
-    dispatch('submit', { formData, type: 'medication', babyId: baby?.id });
-  }
+  // Let BaseForm handle the submit to properly process photos
 
   function handleCancel() {
     dispatch('cancel');
@@ -60,7 +58,7 @@
   ];
 </script>
 
-<BaseForm {baby} type="medication" {error} {success} {formData} on:submit={handleSubmit} on:cancel={handleCancel}>
+<BaseForm {baby} type="medication" {error} {success} {formData} on:submit on:cancel={handleCancel}>
   <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
     <div class="md:col-span-2">
       <label for="medicationName" class="block text-sm font-medium text-gray-700">

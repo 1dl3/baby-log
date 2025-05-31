@@ -32,9 +32,7 @@
     timestamp: new Date().toISOString().slice(0, 16)
   };
 
-  function handleSubmit() {
-    dispatch('submit', { formData, type: 'nursing', babyId: baby?.id });
-  }
+  // Let BaseForm handle the submit to properly process photos
 
   function handleCancel() {
     dispatch('cancel');
@@ -45,7 +43,7 @@
   }
 </script>
 
-<BaseForm {baby} type="nursing" {error} {success} {formData} on:submit={handleSubmit} on:cancel={handleCancel}>
+<BaseForm {baby} type="nursing" {error} {success} {formData} on:submit on:cancel={handleCancel}>
   <div>
     <label for="duration" class="block text-sm font-medium text-gray-700">
       Duration (minutes)

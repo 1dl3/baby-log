@@ -64,6 +64,7 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 					...entry,
 					itemPhotos: photos.map(photo => photo.photoUrl)
 				});
+
 			}
 			return entriesWithPhotos;
 		};

@@ -36,29 +36,15 @@
     formData.photos = formData.photos?.filter((_, i) => i !== index);
   }
 
-  function handleSubmit() {
-    if (formData.photos?.length === 0) {
-      dispatch('error', 'Please select at least one photo to upload');
-      return;
-    }
-
-    const formDataObj = new FormData();
-    formData.photos?.forEach(photo => {
-      formDataObj.append('photos', photo);
-    });
-    formDataObj.append('babyId', baby.id);
-    formDataObj.append('notes', formData.notes);
-    formDataObj.append('timestamp', formData.timestamp);
-
-    dispatch('submit', { formData: formDataObj, type: 'photo', babyId: baby?.id, isFormData: true });
-  }
+  // Let BaseForm handle the submit to properly process photos
+  // The validation is now handled in BaseForm
 
   function handleCancel() {
     dispatch('cancel');
   }
 </script>
 
-<BaseForm {baby} type="photo" {error} {success} {formData} enablePhotoUpload={false} on:submit={handleSubmit} on:cancel={handleCancel}>
+<BaseForm {baby} type="photo" {error} {success} {formData} on:submit on:cancel={handleCancel}>
   <div>
     <label for="photos" class="block text-sm font-medium text-gray-700">
       Photos

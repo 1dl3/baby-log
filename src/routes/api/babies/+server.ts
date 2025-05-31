@@ -27,7 +27,6 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 	}
 
 	const formData = await request.formData();
-	console.log('FormData received:', Object.fromEntries(formData));
 
 	const name = formData.get('name') as string;
 	const birthDate = formData.get('birthDate') as string;

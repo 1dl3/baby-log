@@ -165,10 +165,6 @@
             <NursingForm {baby} {error} {success} on:submit={handleSubmit} on:cancel={handleCancel} on:error={handleError} />
           {:else if selectedType === 'photo'}
             <PhotoForm {baby} {error} {success} on:submit={handleSubmit} on:cancel={handleCancel} on:error={handleError} />
-          {:else if selectedType === 'size'}
-            <SizeForm {baby} {error} {success} on:submit={handleSubmit} on:cancel={handleCancel} on:error={handleError} />
-          {:else if selectedType === 'weight'}
-            <WeightForm {baby} {error} {success} on:submit={handleSubmit} on:cancel={handleCancel} on:error={handleError} />
           {:else if selectedType === 'measurement'}
             <MeasurementForm {baby} {error} {success} on:submit={handleSubmit} on:cancel={handleCancel} on:error={handleError} />
           {/if}

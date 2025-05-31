@@ -279,24 +279,6 @@
             on:cancel={handleCancel} 
             on:error={handleError} 
           />
-        {:else if type === 'size'}
-          <SizeForm 
-            {baby} 
-            {error} 
-            {success} 
-            on:submit={handleSubmit} 
-            on:cancel={handleCancel} 
-            on:error={handleError} 
-          />
-        {:else if type === 'weight'}
-          <WeightForm 
-            {baby} 
-            {error} 
-            {success} 
-            on:submit={handleSubmit} 
-            on:cancel={handleCancel} 
-            on:error={handleError} 
-          />
         {:else if type === 'measurement'}
           <MeasurementForm 
             {baby} 
